@@ -23,19 +23,6 @@ export default function AuthCard({
   const [referralCode, setReferralCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState("");
-  
-  // Restricted bypass: click the partner badge 5 times to unlock Google bypass option!
-  const [bypassClicks, setBypassClicks] = useState(0);
-  const [showBypass, setShowBypass] = useState(false);
-
-  const handlePartnerClick = () => {
-    const nextClicks = bypassClicks + 1;
-    setBypassClicks(nextClicks);
-    if (nextClicks >= 5) {
-      setShowBypass(true);
-      setErrorText("🛠️ Dev Bypass unlocked: Google Quick-Login is now available!");
-    }
-  };
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,72 +180,8 @@ export default function AuthCard({
         </button>
       </form>
 
-      {/* Interactive Credentials Helper desk */}
-      <div className="mt-5 p-3.5 bg-[#0d0e12]/80 border border-zinc-800/80 rounded-xl space-y-2">
-        <span className="text-[10px] text-zinc-400 font-mono tracking-wide flex items-center gap-1">
-          <Key className="w-3.5 h-3.5 text-emerald-400" /> Instant Helper Accounts (Click to Autofill):
-        </span>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            id="fill-admin-btn"
-            type="button"
-            onClick={() => handleFillDemo(defaultAdminEmail, defaultAdminPass)}
-            className="px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 hover:text-white rounded text-[10px] text-zinc-300 font-mono transition-colors text-center cursor-pointer select-none"
-          >
-            👑 Main Admin
-          </button>
-          <button
-            id="fill-user-btn"
-            type="button"
-            onClick={() => handleFillDemo(defaultUserEmail, defaultUserPass)}
-            className="px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 hover:text-white rounded text-[10px] text-zinc-300 font-mono transition-colors text-center cursor-pointer select-none"
-          >
-            👤 Demo Vendor
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-5 pt-4 border-t border-zinc-800/50 text-center space-y-4">
-        {/* Dynamic Gated Google sign-in bypass */}
-        {showBypass && (
-          <div className="space-y-2 animate-fadeIn">
-            <button
-              id="google-bypass-btn"
-              onClick={handleGoogleBypass}
-              disabled={isLoading}
-              className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 rounded-xl text-xs text-gray-300 hover:text-white flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
-            >
-              <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M23.7 12.3c0-.8-.1-1.7-.2-2.5H12v4.8h6.6c-.3 1.5-1.1 2.8-2.4 3.7v3.1h3.8c2.2-2 3.7-5 3.7-9.1z"/>
-                <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.8-3.1c-1.1.7-2.5 1.2-4.2 1.2-3.2 0-5.9-2.2-6.9-5.2H1.3v3.3C3.3 21.3 7.3 24 12 24z"/>
-                <path fill="#FBBC05" d="M5.1 14c-.3-.9-.4-1.8-.4-2.8s.1-1.9.4-2.8V5.1H1.3C.5 6.8 0 8.8 0 11s.5 4.2 1.3 5.9l3.8-2.9z"/>
-                <path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4C17.9 1.2 15.2.5 12 .5c-4.7 0-8.7 2.7-10.7 6.6l3.8 2.9c1-3 3.7-5.2 6.9-5.2z"/>
-              </svg>
-              Google Fast-Login (Dev Mode)
-            </button>
-          </div>
-        )}
-
-        {/* Beautiful Google Partner Emblem Credentials badge with Easter Egg triggers */}
-        <div 
-          onClick={handlePartnerClick}
-          className="flex items-center justify-center gap-2 py-2.5 px-3 bg-[#0d0e12]/60 border border-zinc-800 rounded-xl text-[10px] text-zinc-400 font-mono select-none cursor-pointer hover:bg-zinc-900 transition-colors"
-          title="Click 5 times for Developer Bypass mode"
-        >
-          <span className="flex items-center gap-1.5 text-zinc-300">
-            <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M23.7 12.3c0-.8-.1-1.7-.2-2.5H12v4.8h6.6c-.3 1.5-1.1 2.8-2.4 3.7v3.1h3.8c2.2-2 3.7-5 3.7-9.1z"/>
-              <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.8-3.1c-1.1.7-2.5 1.2-4.2 1.2-3.2 0-5.9-2.2-6.9-5.2H1.3v3.3C3.3 21.3 7.3 24 12 24z"/>
-              <path fill="#FBBC05" d="M5.1 14c-.3-.9-.4-1.8-.4-2.8s.1-1.9.4-2.8V5.1H1.3C.5 6.8 0 8.8 0 11s.5 4.2 1.3 5.9l3.8-2.9z"/>
-              <path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4C17.9 1.2 15.2.5 12 .5c-4.7 0-8.7 2.7-10.7 6.6l3.8 2.9c1-3 3.7-5.2 6.9-5.2z"/>
-            </svg>
-            Google OAuth 2.0
-          </span>
-          <span className="text-zinc-700">|</span>
-          <span className="text-[9px] text-[#10B981] font-black tracking-widest uppercase">Verified Integration Services</span>
-        </div>
-
-        <div className="text-center text-[11px] pt-1 pt-1">
+      <div className="mt-8 pt-4 border-t border-zinc-900 text-center space-y-4">
+        <div className="text-center text-[11px]">
           <button
             id="toggle-auth-mode-btn"
             type="button"

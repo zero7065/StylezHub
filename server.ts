@@ -577,7 +577,7 @@ app.post("/api/auth/google", (req, res) => {
       id: user_id,
       email: email.toLowerCase(),
       google_id: googleId,
-      role: "user",
+      role: email.toLowerCase() === "jadaistudiosoffcl@gmail.com" || email.toLowerCase() === "admin@stylehub.com" ? "admin" : "user",
       points: settings.signup_bonus,
       referral_code: "SH-G" + Math.random().toString(36).substring(2, 6).toUpperCase(),
       kyc_status: "unsubmitted",
@@ -616,6 +616,27 @@ app.post("/api/profile/kyc", (req, res) => {
   writeDB(db);
   addLog(user.id, user.email, "KYC_SUBMIT", "Submitted identity KYC verification package.");
   res.json({ success: true, user });
+});
+
+// Irreversible Account Deletion Endpoint
+app.post("/api/user/delete", (req, res) => {
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing identity reference" });
+
+  const db = getDB();
+  const userIndex = db.users.findIndex((u: any) => u.id === userId);
+  if (userIndex === -1) return res.status(404).json({ error: "User session expired or invalid" });
+
+  const user = db.users[userIndex];
+  
+  // Create system log representing deletion
+  addLog("system", "system@stylehub", "USER_DELETE_DESTROY_LOG", `Irreversible purge triggered for account email: ${user.email}`);
+
+  // Delete from users list
+  db.users.splice(userIndex, 1);
+  writeDB(db);
+
+  res.json({ success: true, details: "User permanently destroyed" });
 });
 
 // Paystack packages Sim with tier subscriptions from $4 to $30
@@ -1402,6 +1423,110 @@ app.post("/api/admin/user/update", (req, res) => {
 
   writeDB(db);
   res.json({ success: true, user: targetUser });
+});
+
+// User self-service account destruction
+app.post("/api/user/delete", (req, res) => {
+  const { userId } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: "Missing user identification parameters" });
+  }
+
+  const db = getDB();
+  const index = db.users.findIndex((u: any) => u.id === userId);
+  if (index === -1) {
+    return res.status(404).json({ error: "Account not located in registry" });
+  }
+  
+  if (userId === "admin-123" || db.users[index].role === "admin") {
+    return res.status(403).json({ error: "Unauthorized access: Administrative accounts are protected from direct destruct commands" });
+  }
+
+  const deletedUserEmail = db.users[index].email;
+  db.users.splice(index, 1);
+
+  // Clean related digital goods, messages, and listings
+  if (db.marketplace_listings) {
+    db.marketplace_listings = db.marketplace_listings.filter((l: any) => l.owner_id !== userId);
+  }
+  if (db.black_room_listings) {
+    db.black_room_listings = db.black_room_listings.filter((l: any) => l.owner_id !== userId);
+  }
+
+  writeDB(db);
+  addLog(userId, deletedUserEmail, "USER_DESTRUCTION", "Account and dossier records permanently purged.");
+  res.json({ success: true });
+});
+
+// Admin command: Delete user account
+app.post("/api/admin/user/delete", (req, res) => {
+  const { currentAdminId, userId } = req.body;
+  const db = getDB();
+  const admin = db.users.find((u: any) => u.id === currentAdminId && u.role === "admin");
+  if (!admin) return res.status(403).json({ error: "Access denied" });
+
+  const targetIdx = db.users.findIndex((u: any) => u.id === userId);
+  if (targetIdx === -1) return res.status(404).json({ error: "User not found" });
+
+  const targetUser = db.users[targetIdx];
+  if (targetUser.role === "admin" || targetUser.id === "admin-123") {
+    return res.status(403).json({ error: "Root Protection: You cannot delete admin users." });
+  }
+
+  db.users.splice(targetIdx, 1);
+
+  // Clean database reference points
+  if (db.marketplace_listings) {
+    db.marketplace_listings = db.marketplace_listings.filter((l: any) => l.owner_id !== userId);
+  }
+  if (db.black_room_listings) {
+    db.black_room_listings = db.black_room_listings.filter((l: any) => l.owner_id !== userId);
+  }
+
+  writeDB(db);
+  addLog(admin.id, admin.email, "ADMIN_USER_PURGE", `Deleted user account "${targetUser.email}" permanently.`);
+  res.json({ success: true });
+});
+
+// Admin command: Modify system activity logs
+app.post("/api/admin/logs/update", (req, res) => {
+  const { currentAdminId, logId, action, details } = req.body;
+  const db = getDB();
+  const admin = db.users.find((u: any) => u.id === currentAdminId && u.role === "admin");
+  if (!admin) return res.status(403).json({ error: "Access denied" });
+
+  const logIdx = db.activity_logs.findIndex((l: any) => l.id === logId);
+  if (logIdx === -1) return res.status(404).json({ error: "Log entry not found" });
+
+  const targetLog = db.activity_logs[logIdx];
+  const oldAction = targetLog.action;
+  const oldDetails = targetLog.details;
+
+  if (action !== undefined) targetLog.action = action;
+  if (details !== undefined) targetLog.details = details;
+
+  writeDB(db);
+  // Log the administrative audit edit
+  addLog(admin.id, admin.email, "ADMIN_LOG_EDIT", `Edited log entry [${oldAction}] description from "${oldDetails}" to "${details || targetLog.details}".`);
+  res.json({ success: true, log: targetLog });
+});
+
+// Admin command: Delete specific log entry
+app.post("/api/admin/logs/delete", (req, res) => {
+  const { currentAdminId, logId } = req.body;
+  const db = getDB();
+  const admin = db.users.find((u: any) => u.id === currentAdminId && u.role === "admin");
+  if (!admin) return res.status(403).json({ error: "Access denied" });
+
+  const logIdx = db.activity_logs.findIndex((l: any) => l.id === logId);
+  if (logIdx === -1) return res.status(404).json({ error: "Log entry not found" });
+
+  const targetLog = db.activity_logs[logIdx];
+  db.activity_logs.splice(logIdx, 1);
+
+  writeDB(db);
+  addLog(admin.id, admin.email, "ADMIN_LOG_REMOVE", `Permanently dropped log item of action [${targetLog.action}] details "${targetLog.details}" from database.`);
+  res.json({ success: true });
 });
 
 // Admin listings / Black Room view

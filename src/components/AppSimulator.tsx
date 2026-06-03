@@ -40,16 +40,180 @@ const SEARCH_SUGGESTIONS = [
   { name: "MAREN MANDONG MANGAI", phone: "806 969 0468", isMerchant: false, initial: "M" },
 ];
 
-// Replicates the OPay logo SVG perfectly
-const OPayLogo = ({ className = "w-16 h-16", color = "#00C5A3" }: { className?: string; color?: string }) => (
-  <div className={`relative ${className} flex items-center justify-center rounded-full bg-white shadow-md`}>
-    <svg viewBox="0 0 100 100" className="w-4/5 h-4/5">
-      <circle cx="50" cy="50" r="32" fill="none" stroke={color} strokeWidth="11" />
-      <rect x="8" y="42" width="22" height="16" fill="white" />
-      <rect x="12" y="44" width="20" height="12" fill="#1A2D54" rx="1.5" />
-    </svg>
-  </div>
-);
+// Multibank brands configuration dictionary
+interface BankBrand {
+  name: string;
+  primaryColor: string;
+  textColor: string;
+  bgColor: string;
+  darkBgColor: string;
+  statusBarDark: boolean;
+  accentColor: string;
+  tagline: string;
+}
+
+const BANK_BRANDS: Record<string, BankBrand> = {
+  opay: {
+    name: "OPay",
+    primaryColor: "#00C5A3",
+    textColor: "#1D3A31",
+    bgColor: "bg-[#00C5A3]",
+    darkBgColor: "bg-[#1C1F22]",
+    statusBarDark: true,
+    accentColor: "#00C5A3",
+    tagline: "We are Beyond Banking"
+  },
+  kuda: {
+    name: "Kuda",
+    primaryColor: "#401964",
+    textColor: "#FFFFFF",
+    bgColor: "bg-[#401964]",
+    darkBgColor: "bg-[#1E122C]",
+    statusBarDark: true,
+    accentColor: "#401964",
+    tagline: "The Bank of the Free"
+  },
+  moniepoint: {
+    name: "Moniepoint",
+    primaryColor: "#0B213F",
+    textColor: "#FFC20E",
+    bgColor: "bg-[#0B213F]",
+    darkBgColor: "bg-[#071324]",
+    statusBarDark: true,
+    accentColor: "#FFC20E",
+    tagline: "Your Partner for Growth"
+  },
+  palmpay: {
+    name: "PalmPay",
+    primaryColor: "#7e1fff",
+    textColor: "#FFFFFF",
+    bgColor: "bg-[#7e1fff]",
+    darkBgColor: "bg-[#1f0b3b]",
+    statusBarDark: true,
+    accentColor: "#FFCC00",
+    tagline: "Pay & Save with PalmPay"
+  },
+  gtbank: {
+    name: "GTBank",
+    primaryColor: "#E25822",
+    textColor: "#FFFFFF",
+    bgColor: "bg-[#E25822]",
+    darkBgColor: "bg-[#25150E]",
+    statusBarDark: true,
+    accentColor: "#FFFFFF",
+    tagline: "Wouldn't you rather bank with us?"
+  },
+  accessbank: {
+    name: "Access Bank",
+    primaryColor: "#1448A4",
+    textColor: "#FFFFFF",
+    bgColor: "bg-[#1448A4]",
+    darkBgColor: "bg-[#071733]",
+    statusBarDark: true,
+    accentColor: "#F15A24",
+    tagline: "More than Banking"
+  },
+  firstbank: {
+    name: "FirstBank",
+    primaryColor: "#0A2540",
+    textColor: "#FFCD00",
+    bgColor: "bg-[#0A2540]",
+    darkBgColor: "bg-[#04101B]",
+    statusBarDark: true,
+    accentColor: "#FFCD00",
+    tagline: "You First"
+  },
+  zenith: {
+    name: "Zenith Bank",
+    primaryColor: "#E21A22",
+    textColor: "#FFFFFF",
+    bgColor: "bg-[#E21A22]",
+    darkBgColor: "bg-[#250002]",
+    statusBarDark: true,
+    accentColor: "#939598",
+    tagline: "In Your Best Interest"
+  },
+  uba: {
+    name: "UBA",
+    primaryColor: "#D11B1B",
+    textColor: "#FFFFFF",
+    bgColor: "bg-[#D11B1B]",
+    darkBgColor: "bg-[#210404]",
+    statusBarDark: true,
+    accentColor: "#FFFFFF",
+    tagline: "Africa's Global Bank"
+  }
+};
+
+const BrandLogo = ({ bankName, className = "w-16 h-16" }: { bankName: string; className?: string }) => {
+  const norm = bankName.toLowerCase();
+  
+  if (norm === "opay") {
+    return (
+      <div className={`relative ${className} flex items-center justify-center rounded-full bg-white shadow-md select-none`}>
+        <svg viewBox="0 0 100 100" className="w-4/5 h-4/5">
+          <circle cx="50" cy="50" r="32" fill="none" stroke="#00C5A3" strokeWidth="11" />
+          <rect x="8" y="42" width="22" height="16" fill="white" />
+          <rect x="12" y="44" width="20" height="12" fill="#1A2D54" rx="1.5" />
+        </svg>
+      </div>
+    );
+  }
+  
+  let shortcutText = norm.substring(0, 2).toUpperCase();
+  let logoBg = "bg-slate-900";
+  let fgColor = "text-white";
+  let labelText = norm.toUpperCase();
+  
+  if (norm === "kuda") {
+    shortcutText = "K";
+    logoBg = "bg-[#401964]";
+    fgColor = "text-[#00C5A3]";
+    labelText = "Kuda.";
+  } else if (norm === "moniepoint") {
+    shortcutText = "M";
+    logoBg = "bg-[#0B213F]";
+    fgColor = "text-[#FFC20E]";
+    labelText = "monie";
+  } else if (norm === "palmpay") {
+    shortcutText = "P";
+    logoBg = "bg-[#7e1fff]";
+    fgColor = "text-[#FFCC00]";
+    labelText = "PalmPay";
+  } else if (norm === "gtbank") {
+    shortcutText = "GT";
+    logoBg = "bg-[#E25822]";
+    fgColor = "text-white";
+    labelText = "GTBank";
+  } else if (norm === "accessbank") {
+    shortcutText = "A";
+    logoBg = "bg-[#1448A4]";
+    fgColor = "text-white";
+    labelText = "access";
+  } else if (norm === "firstbank") {
+    shortcutText = "F";
+    logoBg = "bg-[#0A2540]";
+    fgColor = "text-[#FFCD00]";
+    labelText = "FirstBank";
+  } else if (norm === "zenith") {
+    shortcutText = "Z";
+    logoBg = "bg-white";
+    fgColor = "text-[#E21A22]";
+    labelText = "Zenith";
+  } else if (norm === "uba") {
+    shortcutText = "UBA";
+    logoBg = "bg-[#D11B1B]";
+    fgColor = "text-white";
+    labelText = "UBA";
+  }
+
+  return (
+    <div className={`relative ${className} flex flex-col items-center justify-center rounded-2xl ${logoBg} border border-white/10 shadow-md p-1 select-none`}>
+      <span className={`text-sm sm:text-base font-black font-sans leading-none ${fgColor}`}>{shortcutText}</span>
+      <span className="text-[7px] font-mono opacity-85 leading-none mt-0.5 tracking-tighter text-white">{labelText}</span>
+    </div>
+  );
+};
 
 // High-fidelity phone status bar
 const DeviceStatusBar = ({ dark = false }: { dark?: boolean }) => {
@@ -226,48 +390,28 @@ export default function AppSimulator({
   // RENDER SPLASH SCREEN
   // ----------------------------------------------------------------------------------
   const renderSplashScreen = () => {
-    if (bankName === "opay") {
-      return (
-        <div 
-          onClick={handleSplashSkip}
-          className="bg-[#00C5A3] h-full flex flex-col justify-between p-6 text-white animate-fadeIn cursor-pointer"
-        >
-          <DeviceStatusBar dark={true} />
-          <div className="flex-1 flex flex-col justify-center items-center">
-            <OPayLogo className="w-20 h-20 mb-3 animate-pulse" />
-            <h1 className="text-2xl font-black py-2 text-[#1A2D54] tracking-tight">We are Beyond Banking</h1>
-          </div>
-          <div className="text-center space-y-4 pb-4">
-            <div className="flex items-center justify-center gap-1.5 text-[9px] text-[#1A2D54] font-bold select-none leading-relaxed">
-              <span className="text-xs">🔰</span>
-              <span>
-                Licensed by the <span className="font-extrabold uppercase">CBN</span> and insured by the <span className="font-bold underline">NDIC</span>
-              </span>
-            </div>
-            <p className="text-[10px] text-emerald-100 opacity-60">Tap anywhere to enter dashboard</p>
-          </div>
-        </div>
-      );
-    }
-
-    // Default Splash for other banks
+    const brand = BANK_BRANDS[bankName] || BANK_BRANDS.opay;
+    const isWhiteText = brand.textColor === "#FFFFFF";
     return (
       <div 
         onClick={handleSplashSkip}
-        className="bg-slate-950 h-full flex flex-col justify-between p-6 text-white animate-fadeIn cursor-pointer"
+        className={`h-full flex flex-col justify-between p-6 animate-fadeIn cursor-pointer ${isWhiteText ? "text-white" : "text-slate-900"}`}
+        style={{ backgroundColor: brand.primaryColor }}
       >
-        <DeviceStatusBar dark={true} />
+        <DeviceStatusBar dark={brand.statusBarDark} />
         <div className="flex-1 flex flex-col justify-center items-center text-center">
-          <div className="w-14 h-14 bg-cyan-500/10 border border-cyan-400/35 rounded-2xl flex items-center justify-center mb-3">
-            <Smartphone className="text-cyan-400 w-6 h-6 animate-pulse" />
-          </div>
-          <h1 className="text-xl font-black tracking-tight uppercase text-cyan-400">{bank} Simulated Core</h1>
-          <p className="text-[10.5px] text-gray-400 tracking-wider mt-1.5">NIP instant settlement system activation</p>
+          <BrandLogo bankName={bankName} className="w-20 h-20 mb-3 animate-pulse" />
+          <h1 className="text-2xl font-black py-2 tracking-tight leading-snug">{brand.tagline}</h1>
+          <p className="text-[10px] font-mono tracking-widest uppercase opacity-75 mt-1">{brand.name} SECURE SIMULATION</p>
         </div>
-        <div className="text-center pb-6">
-          <button className="px-6 py-2 bg-slate-900 border border-slate-800 rounded-full text-[10px] font-bold font-mono tracking-wider">
-            Go to dashboard &rarr;
-          </button>
+        <div className="text-center space-y-4 pb-4">
+          <div className="flex items-center justify-center gap-1.5 text-[9px] font-bold select-none leading-relaxed">
+            <span className="text-xs">🔰</span>
+            <span>
+              Licensed by the <span className="font-extrabold uppercase">CBN</span> and insured by the <span className="font-bold underline">NDIC</span>
+            </span>
+          </div>
+          <p className="text-[10px] opacity-60">Tap anywhere to enter dashboard</p>
         </div>
       </div>
     );
@@ -277,16 +421,30 @@ export default function AppSimulator({
   // RENDER HOME DASHBOARD
   // ----------------------------------------------------------------------------------
   const renderHomeDashboard = () => {
-    if (bankName === "opay") {
-      return (
-        <div className="bg-[#F5F6FA] h-full flex flex-col text-gray-800 font-sans relative overflow-y-auto select-none">
-          <DeviceStatusBar dark={false} />
+    const brand = BANK_BRANDS[bankName] || BANK_BRANDS.opay;
+
+    let gradientFromTo = "from-[#005D4B] to-[#01856C]";
+    if (bankName === "kuda") gradientFromTo = "from-[#401964] to-[#200438]";
+    else if (bankName === "moniepoint") gradientFromTo = "from-[#0B213F] to-[#061426]";
+    else if (bankName === "palmpay") gradientFromTo = "from-[#7e1fff] to-[#45099c]";
+    else if (bankName === "gtbank") gradientFromTo = "from-[#E25822] to-[#a13205]";
+    else if (bankName === "accessbank") gradientFromTo = "from-[#1448A4] to-[#072459]";
+    else if (bankName === "firstbank") gradientFromTo = "from-[#0A2540] to-[#030f1c]";
+    else if (bankName === "zenith") gradientFromTo = "from-[#E21A22] to-[#990a10]";
+    else if (bankName === "uba") gradientFromTo = "from-[#D11B1B] to-[#800707]";
+
+    return (
+      <div className="bg-[#F5F6FA] h-full flex flex-col text-gray-800 font-sans relative overflow-y-auto select-none">
+        <DeviceStatusBar dark={false} />
           
           {/* Header Bar */}
           <div className="bg-white px-4 py-3 flex justify-between items-center border-b border-gray-100 shadow-sm">
             <div className="flex items-center gap-2.5">
               <div className="relative">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center font-black text-sm text-emerald-700 uppercase">
+                <div 
+                  className="w-10 h-10 rounded-full border flex items-center justify-center font-black text-sm uppercase"
+                  style={{ backgroundColor: brand.primaryColor + '15', color: brand.primaryColor, borderColor: brand.primaryColor + '30' }}
+                >
                   {senderName.charAt(0)}
                 </div>
                 <span className="absolute -bottom-1 -right-0.5 bg-sky-500 text-[8px] font-black text-white w-4 h-4 rounded-full flex items-center justify-center border border-white">
@@ -327,16 +485,18 @@ export default function AppSimulator({
 
           {/* Balance card container */}
           <div className="p-4 bg-white">
-            <div className="bg-gradient-to-br from-[#005D4B] to-[#01856C] text-white p-5 rounded-3xl shadow-xl shadow-emerald-950/10 space-y-3.5 relative overflow-hidden">
+            <div 
+              className={`bg-gradient-to-br ${gradientFromTo} text-white p-5 rounded-3xl shadow-xl space-y-3.5 relative overflow-hidden`}
+            >
               <div className="flex justify-between items-center text-[10px]">
-                <div className="flex items-center gap-1.5 font-bold text-emerald-100 uppercase opacity-95">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
+                <div className="flex items-center gap-1.5 font-bold text-white/90 uppercase opacity-95">
+                  <ShieldCheck className="w-3.5 h-3.5 text-white" />
                   <span>Available Balance</span>
-                  <button onClick={() => setMaskBalance(!maskBalance)} className="p-0.5 active:scale-95 transition-all">
+                  <button onClick={() => setMaskBalance(!maskBalance)} className="p-0.5 active:scale-95 transition-all cursor-pointer">
                     {maskBalance ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-                <span className="text-emerald-100 font-semibold cursor-pointer select-none">
+                <span className="text-white/80 font-semibold cursor-pointer select-none">
                   Transaction History &gt;
                 </span>
               </div>
@@ -347,7 +507,8 @@ export default function AppSimulator({
                 </h1>
                 <button
                   onClick={handleToTransfer}
-                  className="px-4 py-2 bg-white text-[#005D4B] font-extrabold text-xs rounded-full shadow hover:brightness-105 active:scale-95 transition-all flex items-center gap-1"
+                  className="px-4 py-2 bg-white font-extrabold text-xs rounded-full shadow hover:brightness-105 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                  style={{ color: brand.primaryColor }}
                 >
                   <span>+ Add Money</span>
                 </button>
@@ -367,27 +528,36 @@ export default function AppSimulator({
           <div className="px-4 gap-4 grid grid-cols-3 text-center py-4 bg-white">
             <button 
               onClick={handleToTransfer}
-              className="flex flex-col items-center gap-1.5 focus:outline-none"
+              className="flex flex-col items-center gap-1.5 focus:outline-none cursor-pointer"
             >
-              <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center text-[#00C5A3] shadow-inner shadow-green-200/20 active:scale-95 transition-transform">
+              <div 
+                className="w-14 h-14 rounded-full flex items-center justify-center shadow-inner active:scale-95 transition-transform"
+                style={{ backgroundColor: brand.primaryColor + '10', color: brand.primaryColor }}
+              >
                 <Smartphone className="w-6 h-6" />
               </div>
-              <span className="text-[11px] font-bold text-gray-700">To OPay</span>
+              <span className="text-[11px] font-bold text-gray-700">To {brand.name}</span>
             </button>
             <button 
               onClick={handleToTransfer}
-              className="flex flex-col items-center gap-1.5 focus:outline-none"
+              className="flex flex-col items-center gap-1.5 focus:outline-none cursor-pointer"
             >
-              <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center text-[#00C5A3] shadow-inner shadow-green-200/20 active:scale-95 transition-transform">
+              <div 
+                className="w-14 h-14 rounded-full flex items-center justify-center shadow-inner active:scale-95 transition-transform"
+                style={{ backgroundColor: brand.primaryColor + '10', color: brand.primaryColor }}
+              >
                 <ArrowRight className="w-6 h-6" />
               </div>
               <span className="text-[11px] font-bold text-gray-700">To Bank</span>
             </button>
             <button 
               onClick={handleToTransfer}
-              className="flex flex-col items-center gap-1.5 focus:outline-none"
+              className="flex flex-col items-center gap-1.5 focus:outline-none cursor-pointer"
             >
-              <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center text-[#00C5A3] shadow-inner shadow-green-200/20 active:scale-95 transition-transform">
+              <div 
+                className="w-14 h-14 rounded-full flex items-center justify-center shadow-inner active:scale-95 transition-transform"
+                style={{ backgroundColor: brand.primaryColor + '10', color: brand.primaryColor }}
+              >
                 <ArrowUpRight className="w-6 h-6" />
               </div>
               <span className="text-[11px] font-bold text-gray-700">Withdraw</span>
@@ -424,12 +594,18 @@ export default function AppSimulator({
               <span>Saving Challenge 2026</span>
               <span>🎁</span>
             </div>
-            <div className="bg-emerald-50/50 border border-emerald-100/60 p-4 rounded-2xl flex justify-between items-center">
+            <div 
+              className="p-4 rounded-2xl flex justify-between items-center border"
+              style={{ backgroundColor: brand.primaryColor + '08', borderColor: brand.primaryColor + '15' }}
+            >
               <div>
-                <h4 className="text-[11.5px] font-black text-emerald-900">🎯 Special Target — Start small</h4>
-                <p className="text-[10px] text-emerald-700 mt-0.5">Start daily, finish big in our 2026 challenge</p>
+                <h4 className="text-[11.5px] font-black" style={{ color: brand.primaryColor }}>🎯 Special Target — Start small</h4>
+                <p className="text-[10px] text-gray-500 mt-0.5">Start daily, finish big in our 2026 challenge</p>
               </div>
-              <button className="px-4 py-1.5 bg-[#00C5A3] hover:bg-emerald-600 text-white text-[11px] font-bold rounded-full cursor-pointer">
+              <button 
+                className="px-4 py-1.5 text-white text-[11px] font-bold rounded-full cursor-pointer hover:opacity-90"
+                style={{ backgroundColor: brand.primaryColor }}
+              >
                 Go
               </button>
             </div>
@@ -509,43 +685,13 @@ export default function AppSimulator({
           </div>
         </div>
       );
-    }
+    };
 
-    // Default Bank Dashboard
-    return (
-      <div className="bg-[#0F172A] text-white h-full flex flex-col justify-between">
-        <DeviceStatusBar dark={true} />
-        <div className="p-6 space-y-6">
-          <div className="flex justify-between items-center border-b border-slate-900 pb-3">
-            <h1 className="text-xs font-black uppercase tracking-widest text-[#00E5FF]">{bank} Sandbox</h1>
-            <span className="text-[9px] text-emerald-400 font-mono font-bold uppercase tracking-wider block">Logged in ✓</span>
-          </div>
-
-          <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
-            <span className="text-[9px] text-gray-400 uppercase tracking-widest block font-bold">Dynamic Balance</span>
-            <h2 className="text-2xl font-black font-mono text-cyan-400">{formatCurrency(balance)}</h2>
-            <p className="text-xs text-gray-500">Tester Sender: {senderName}</p>
-          </div>
-
-          <button
-            onClick={handleToTransfer}
-            className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-gray-950 font-black text-xs uppercase rounded-xl tracking-wider hover:brightness-105"
-          >
-            Go to Transfer Screen &rarr;
-          </button>
-        </div>
-        <div className="p-4 bg-slate-950 text-center text-[10px] text-gray-600 font-mono border-t border-slate-905">
-          SIMULATION ACTIVE • CLICK SENDER TO BACK OUT
-        </div>
-      </div>
-    );
-  };
-
-  // ----------------------------------------------------------------------------------
-  // RENDER TRANSFER recipient & SEARCH
-  // ----------------------------------------------------------------------------------
-  const renderTransferPage = () => {
-    if (bankName === "opay") {
+    // ----------------------------------------------------------------------------------
+    // RENDER TRANSFER recipient & SEARCH
+    // ----------------------------------------------------------------------------------
+    const renderTransferPage = () => {
+      const brand = BANK_BRANDS[bankName] || BANK_BRANDS.opay;
       const activeList = searchQuery.trim() !== "" 
         ? SEARCH_SUGGESTIONS.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.phone.includes(searchQuery))
         : MOCK_RECENTS;
@@ -560,18 +706,18 @@ export default function AppSimulator({
               <button onClick={() => setStep("home")} className="p-1 text-gray-800 active:scale-95 transition-transform">
                 <ChevronLeft className="w-5 h-5 text-gray-900" />
               </button>
-              <h1 className="text-sm font-black text-gray-900">Transfer to OPay Account</h1>
+              <h1 className="text-sm font-black text-gray-900">Transfer to {brand.name} Account</h1>
             </div>
-            <span className="text-xs font-black text-[#00C5A3] cursor-pointer">History</span>
+            <span className="text-xs font-black cursor-pointer" style={{ color: brand.primaryColor }}>History</span>
           </div>
 
           {/* Quick Predict Promo ad Banner */}
           <div className="p-4 pt-2.5">
-            <div className="bg-gradient-to-r from-emerald-800 to-indigo-900 text-white rounded-xl p-3 flex justify-between items-center relative overflow-hidden h-[65px] border border-emerald-700/20">
+            <div className="bg-gradient-to-r from-teal-800 to-indigo-900 text-white rounded-xl p-3 flex justify-between items-center relative overflow-hidden h-[65px] border border-teal-700/20">
               <div className="space-y-0.5 z-10 w-2/3">
-                <span className="text-[10px] bg-red-500 text-white leading-none font-bold px-1.5 rounded uppercase">iLOTBET x OPay</span>
+                <span className="text-[10px] bg-red-500 text-white leading-none font-bold px-1.5 rounded uppercase">iLOTBET x {brand.name}</span>
                 <h4 className="text-xs font-black tracking-tight pt-1 leading-normal">QUICK PREDICT NOW</h4>
-                <p className="text-[8px] text-emerald-100 opacity-90 font-medium">Predict scores and claim up to ₦150k payouts weekly</p>
+                <p className="text-[8px] text-teal-100 opacity-90 font-medium">Predict scores and claim up to ₦150k payouts weekly</p>
               </div>
               <span className="text-4xl translate-x-2 translate-y-1 rotate-12 filter grayscale opacity-90">⚽</span>
             </div>
@@ -579,7 +725,10 @@ export default function AppSimulator({
 
           {/* Info notification Alert */}
           <div className="px-4">
-            <div className="bg-[#E6F9F5] text-emerald-800 p-2 px-4 rounded-xl flex items-center gap-2 text-[10px] font-bold">
+            <div 
+              className="p-2 px-4 rounded-xl flex items-center gap-2 text-[10px] font-bold"
+              style={{ backgroundColor: brand.primaryColor + '10', color: brand.primaryColor }}
+            >
               <span>⚡</span>
               <span>Instant, Zero Issues, Free</span>
             </div>
@@ -596,8 +745,9 @@ export default function AppSimulator({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setEditingInputType("account")}
-                  placeholder="Phone No./OPay Account No./Name"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-4 pr-10 py-3.5 text-xs text-gray-800 font-semibold focus:outline-none focus:border-[#00C5A3] focus:bg-white"
+                  placeholder={`Phone No./${brand.name} Account No./Name`}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-4 pr-10 py-3.5 text-xs text-gray-800 font-semibold focus:outline-none focus:bg-white"
+                  style={{ focusBorderColor: brand.primaryColor } as any}
                 />
                 <span className="absolute right-3.5 top-3.5 text-gray-400 cursor-pointer">
                   <QrCode className="w-4 h-4" />
@@ -608,9 +758,12 @@ export default function AppSimulator({
 
           {/* Tabs Filter Bar */}
           <div className="bg-white border-b border-gray-100 flex text-center">
-            <div className="flex-1 py-2.5 border-b-2 border-[#00C5A3] font-bold text-xs text-[#00C5A3] cursor-pointer">
+            <button 
+              className="flex-1 py-2.5 border-b-2 font-bold text-xs cursor-pointer focus:outline-none"
+              style={{ borderColor: brand.primaryColor, color: brand.primaryColor }}
+            >
               Recents
-            </div>
+            </button>
             <div className="flex-1 py-2.5 font-bold text-xs text-gray-400 cursor-pointer">
               Favourites
             </div>
@@ -629,7 +782,10 @@ export default function AppSimulator({
                 className="bg-white border border-gray-100 p-3 rounded-2xl flex justify-between items-center hover:border-emerald-200 cursor-pointer shadow-sm transition-all"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#E5F9F6] text-[#00C5A3] font-black text-sm flex items-center justify-center uppercase">
+                  <div 
+                    className="w-10 h-10 rounded-full font-black text-sm flex items-center justify-center uppercase"
+                    style={{ backgroundColor: brand.primaryColor + '15', color: brand.primaryColor }}
+                  >
                     {contact.initial || contact.name.charAt(0)}
                   </div>
                   <div>
@@ -688,15 +844,18 @@ export default function AppSimulator({
                   <button onClick={() => setEditingInputType("account")} className="p-1 text-gray-800">
                     <ChevronLeft className="w-5 h-5 text-gray-900" />
                   </button>
-                  <h1 className="text-sm font-black text-gray-900">Transfer to OPay Account</h1>
+                  <h1 className="text-sm font-black text-gray-900">Transfer to {brand.name} Account</h1>
                 </div>
-                <span className="text-xs font-black text-[#00C5A3] cursor-pointer">Records</span>
+                <span className="text-xs font-black cursor-pointer" style={{ color: brand.primaryColor }}>Records</span>
               </div>
 
               <div className="p-4 flex-1 space-y-4 overflow-y-auto">
                 {/* Chosen Profile Title Tag block */}
                 <div className="bg-white p-3 border border-gray-100 rounded-2xl flex items-center gap-3 shadow-sm">
-                  <div className="w-9 h-9 rounded-full bg-[#E5F9F6] text-[#00C5A3] font-bold text-sm flex items-center justify-center uppercase">
+                  <div 
+                    className="w-9 h-9 rounded-full font-bold text-sm flex items-center justify-center uppercase"
+                    style={{ backgroundColor: brand.primaryColor + '15', color: brand.primaryColor }}
+                  >
                     {selectedContact ? selectedContact.initial : "R"}
                   </div>
                   <div>
@@ -724,7 +883,7 @@ export default function AppSimulator({
                     )}
 
                     <div className="flex items-baseline gap-1 bg-white font-mono">
-                      <span className="text-xl font-black text-[#00C5A3]">₦</span>
+                      <span className="text-xl font-black" style={{ color: brand.primaryColor }}>₦</span>
                       <input
                         type="text"
                         readOnly
@@ -742,9 +901,10 @@ export default function AppSimulator({
                         key={chip}
                         type="button"
                         onClick={() => setTypedAmount(chip)}
+                        style={typedAmount === chip ? { backgroundColor: brand.primaryColor + '15', borderColor: brand.primaryColor, color: brand.primaryColor } : {}}
                         className={`py-2 px-1 text-[11px] font-extrabold border rounded-xl select-none text-center cursor-pointer ${
                           typedAmount === chip
-                            ? "bg-[#E5F9F6] border-[#00C5A3] text-[#00C5A3]"
+                            ? ""
                             : "bg-[#F8F9FA] border-gray-100 text-gray-600 hover:border-gray-300"
                         }`}
                       >
@@ -763,7 +923,7 @@ export default function AppSimulator({
                     value={typedRemark}
                     onChange={(e) => setTypedRemark(e.target.value)}
                     placeholder="What's this for? (Optional)"
-                    className="w-full text-xs font-semibold bg-gray-50 border border-gray-200 rounded-xl px-4.5 py-3 text-gray-800 focus:outline-none focus:border-[#00C5A3]"
+                    className="w-full text-xs font-semibold bg-gray-50 border border-gray-200 rounded-xl px-4.5 py-3 text-gray-800 focus:outline-none focus:border-gray-350"
                   />
 
                   {/* Dual category markers */}
@@ -771,7 +931,10 @@ export default function AppSimulator({
                     <button className="py-2.5 bg-gray-50 text-gray-500 font-bold text-xs rounded-xl hover:bg-gray-100 border border-transparent hover:border-gray-200 cursor-pointer">
                       Purchase
                     </button>
-                    <button className="py-2.5 bg-[#E5F9F6] text-[#00C5A3] border border-[#00C5A3]/30 font-bold text-xs rounded-xl cursor-pointer">
+                    <button 
+                      className="py-2.5 border font-bold text-xs rounded-xl cursor-pointer"
+                      style={{ backgroundColor: brand.primaryColor + '15', color: brand.primaryColor, borderColor: brand.primaryColor + '20' }}
+                    >
                       Personal
                     </button>
                   </div>
@@ -786,7 +949,7 @@ export default function AppSimulator({
                   disabled={!typedAmount || isNaN(parseFloat(typedAmount))}
                   className="w-full py-3 rounded-full text-sm font-black uppercase text-white shadow-lg tracking-wide transition-all select-none cursor-pointer"
                   style={{
-                    backgroundColor: (!typedAmount || isNaN(parseFloat(typedAmount))) ? "#BFF1E5" : "#00C5A3"
+                    backgroundColor: (!typedAmount || isNaN(parseFloat(typedAmount))) ? brand.primaryColor + '40' : brand.primaryColor
                   }}
                 >
                   Confirm
@@ -808,152 +971,109 @@ export default function AppSimulator({
           )}
         </div>
       );
-    }
-
-    // Default universal bank input page
-    return (
-      <div className="bg-slate-900 text-slate-100 h-full flex flex-col justify-between">
-        <DeviceStatusBar dark={true} />
-        <div className="p-4 bg-slate-950 flex justify-between items-center border-b border-zinc-800">
-          <button onClick={() => setStep("home")} className="text-gray-400">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <span className="text-xs font-extrabold uppercase text-gray-300">Sync details</span>
-          <span className="w-5" />
-        </div>
-
-        <div className="p-6 flex-1 space-y-4">
-          <div className="p-4.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
-            <label className="text-[9px] text-[#00E5FF] font-mono tracking-widest uppercase font-bold block">Receiver Name</label>
-            <p className="text-sm font-black text-white">{receiverName}</p>
-            <div className="text-[9px] text-gray-500 pt-3 border-t border-slate-850">
-              {receiverBank} | Ledger validation
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[10px] text-zinc-400 font-semibold uppercase">Amount to Transfer (₦)</label>
-            <input
-              type="number"
-              value={typedAmount}
-              onChange={(e) => setTypedAmount(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-base text-cyan-400 font-mono focus:outline-none"
-            />
-          </div>
-        </div>
-
-        <div className="p-4 bg-slate-950 border-t border-slate-900">
-          <button
-            onClick={handleToConfirm}
-            className="w-full py-3.5 bg-gradient-to-r from-cyan-400 to-blue-500 text-gray-950 font-black text-xs uppercase rounded-xl"
-          >
-            Go to confirmation screen &rarr;
-          </button>
-        </div>
-      </div>
-    );
-  };
+    };
 
   // ----------------------------------------------------------------------------------
   // RENDER CONFIRMATION SCREEN (BOTTOM SHEETS OR SCREENS)
   // ----------------------------------------------------------------------------------
   const renderConfirmationPage = () => {
+    const brand = BANK_BRANDS[bankName] || BANK_BRANDS.opay;
     const totalCost = parseFloat(typedAmount) || amount;
     
-    if (bankName === "opay") {
-      return (
-        <div className="bg-[#1C1F22]/50 h-full flex flex-col justify-end text-gray-800 font-sans relative select-none animate-fadeIn">
-          {/* Virtual background close trigger */}
-          <div className="flex-1" onClick={() => setStep("transfer")} />
+    return (
+      <div className="bg-[#1C1F22]/50 h-full flex flex-col justify-end text-gray-800 font-sans relative select-none animate-fadeIn">
+        {/* Virtual background close trigger */}
+        <div className="flex-1" onClick={() => setStep("transfer")} />
 
-          {/* Bottom Sheet dialog container */}
-          <div className="bg-white rounded-t-[2.5rem] p-6 shadow-2xl space-y-5 animate-slideUp relative z-50">
-            <div className="flex justify-between items-center pb-2.5 border-b border-gray-100">
-              <span className="w-3" />
-              <div className="absolute left-1/2 -translate-x-1/2 top-3 w-12 h-1 bg-gray-300 rounded-full" />
-              <button onClick={() => setStep("transfer")} className="p-1 text-gray-400 hover:text-gray-900">
-                <X className="w-5 h-5" />
-              </button>
-              <span className="text-xs font-black text-[#00C5A3] cursor-pointer">Use Payment PIN</span>
-            </div>
-
-            {/* Mass central amount */}
-            <div className="text-center space-y-1">
-              <h1 className="text-3xl font-black text-gray-900 font-sans tracking-tight">
-                ₦{totalCost.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
-              </h1>
-            </div>
-
-            {/* Structured rows lists */}
-            <div className="space-y-3 font-semibold text-xs text-gray-500 divide-y divide-gray-100/75">
-              <div className="flex justify-between items-center text-gray-400 font-bold uppercase text-[9.5px]">
-                <span>Details fields</span>
-                <span className="text-[#00C5A3]">NIP Secured</span>
-              </div>
-              <div className="flex justify-between pt-2.5">
-                <span>Account Number</span>
-                <span className="text-gray-900 font-mono font-bold">{typedAccount || "808 169 4422"}</span>
-              </div>
-              <div className="flex justify-between pt-2.5 items-center">
-                <span>Name</span>
-                <span className="text-gray-950 font-black flex items-center gap-1.5">
-                  <span className="w-4.5 h-4.5 rounded-full bg-emerald-50 text-[10px] text-emerald-600 font-black flex items-center justify-center">✓</span>
-                  {selectedContact ? selectedContact.name : receiverName}
-                </span>
-              </div>
-              <div className="flex justify-between pt-2.5 relative">
-                <span>Amount</span>
-                <span className="text-gray-950 font-black font-mono">
-                  ₦{totalCost.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
-                  {totalCost >= 1000 && (
-                    <span className="absolute top-[-22px] right-2 bg-emerald-500 text-white text-[7.5px] font-bold px-1 py-0.5 rounded leading-none select-none">
-                      Thousands
-                    </span>
-                  )}
-                </span>
-              </div>
-              <div className="flex justify-between pt-2.5">
-                <span>Payment Method</span>
-                <span className="text-gray-950 font-black">All &gt;</span>
-              </div>
-            </div>
-
-            {/* Available Balance metrics card inner */}
-            <div className="bg-[#F8F9FB] p-4 rounded-2xl border border-gray-100 space-y-2.5 text-xs text-gray-700">
-              <div className="flex justify-between items-center">
-                <span className="flex items-center gap-1 font-semibold text-gray-500">
-                  Available Balance <span className="text-gray-300">ⓘ</span>
-                </span>
-                <span className="font-bold flex items-center gap-1">
-                  (₦305.70)
-                </span>
-              </div>
-
-              {/* Insufficient balance simulated red banner indicator flag */}
-              {totalCost > 305 && (
-                <div className="text-[10px] text-red-500 font-black animate-pulse flex items-center gap-1">
-                  <span>●</span>
-                  <span>Insufficient balance</span>
-                </div>
-              )}
-
-              <div className="border-t border-dashed border-gray-200/80 pt-2 flex justify-between text-[11px] text-gray-500">
-                <span>Wallet (₦0.00)</span>
-                <div className="flex gap-2.5">
-                  <span>OWealth (₦305.70)</span>
-                  <span className="text-emerald-500 font-bold">+ Add Money &gt;</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Pay execution Button trigger (discards balance check restriction to bypass sandbox limits) */}
-            <button
-              onClick={() => setShowReminder(true)}
-              className="w-full py-4 bg-[#00C5A3] hover:brightness-105 rounded-full font-black text-xs uppercase text-white shadow-xl shadow-emerald-500/20 text-center select-none block cursor-pointer tracking-wider"
-            >
-              Pay
+        {/* Bottom Sheet dialog container */}
+        <div className="bg-white rounded-t-[2.5rem] p-6 shadow-2xl space-y-5 animate-slideUp relative z-50">
+          <div className="flex justify-between items-center pb-2.5 border-b border-gray-100">
+            <span className="w-3" />
+            <div className="absolute left-1/2 -translate-x-1/2 top-3 w-12 h-1 bg-gray-300 rounded-full" />
+            <button onClick={() => setStep("transfer")} className="p-1 text-gray-400 hover:text-gray-900">
+              <X className="w-5 h-5" />
             </button>
+            <span className="text-xs font-black cursor-pointer" style={{ color: brand.primaryColor }}>Use Payment PIN</span>
           </div>
+
+          {/* Mass central amount */}
+          <div className="text-center space-y-1">
+            <h1 className="text-3xl font-black text-gray-900 font-sans tracking-tight">
+              ₦{totalCost.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
+            </h1>
+          </div>
+
+          {/* Structured rows lists */}
+          <div className="space-y-3 font-semibold text-xs text-gray-500 divide-y divide-gray-100/75">
+            <div className="flex justify-between items-center text-gray-400 font-bold uppercase text-[9.5px]">
+              <span>Details fields</span>
+              <span style={{ color: brand.primaryColor }}>NIP Secured</span>
+            </div>
+            <div className="flex justify-between pt-2.5">
+              <span>Account Number</span>
+              <span className="text-gray-900 font-mono font-bold">{typedAccount || "808 169 4422"}</span>
+            </div>
+            <div className="flex justify-between pt-2.5 items-center">
+              <span>Name</span>
+              <span className="text-gray-950 font-black flex items-center gap-1.5">
+                <span className="w-4.5 h-4.5 rounded-full bg-emerald-50 text-[10px] text-emerald-600 font-black flex items-center justify-center">✓</span>
+                {selectedContact ? selectedContact.name : receiverName}
+              </span>
+            </div>
+            <div className="flex justify-between pt-2.5 relative">
+              <span>Amount</span>
+              <span className="text-gray-950 font-black font-mono">
+                ₦{totalCost.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
+                {totalCost >= 1000 && (
+                  <span className="absolute top-[-22px] right-2 bg-emerald-500 text-white text-[7.5px] font-bold px-1 py-0.5 rounded leading-none select-none">
+                    Thousands
+                  </span>
+                )}
+              </span>
+            </div>
+            <div className="flex justify-between pt-2.5">
+              <span>Payment Method</span>
+              <span className="text-gray-950 font-black">All &gt;</span>
+            </div>
+          </div>
+
+          {/* Available Balance metrics card inner */}
+          <div className="bg-[#F8F9FB] p-4 rounded-2xl border border-gray-100 space-y-2.5 text-xs text-gray-700">
+            <div className="flex justify-between items-center">
+              <span className="flex items-center gap-1 font-semibold text-gray-500">
+                Available Balance <span className="text-gray-300">ⓘ</span>
+              </span>
+              <span className="font-bold flex items-center gap-1">
+                (₦305.70)
+              </span>
+            </div>
+
+            {/* Insufficient balance simulated red banner indicator flag */}
+            {totalCost > 305 && (
+              <div className="text-[10px] text-red-500 font-black animate-pulse flex items-center gap-1">
+                <span>●</span>
+                <span>Insufficient balance</span>
+              </div>
+            )}
+
+            <div className="border-t border-dashed border-gray-200/80 pt-2 flex justify-between text-[11px] text-gray-500">
+              <span>Wallet (₦0.00)</span>
+              <div className="flex gap-2.5">
+                <span>{brand.name} Wealth (₦305.70)</span>
+                <span className="font-bold cursor-pointer" style={{ color: brand.primaryColor }}>+ Add Money &gt;</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Pay execution Button trigger (discards balance check restriction to bypass sandbox limits) */}
+          <button
+            onClick={() => setShowReminder(true)}
+            className="w-full py-4 hover:brightness-105 rounded-full font-black text-xs uppercase text-white shadow-xl text-center select-none block cursor-pointer tracking-wider"
+            style={{ backgroundColor: brand.primaryColor }}
+          >
+            Pay
+          </button>
+        </div>
 
           {/* Simulated reminder popup (Image 7 look) */}
           {showReminder && (
@@ -1001,14 +1121,16 @@ export default function AppSimulator({
                 <div className="grid grid-cols-2 gap-4">
                   <button 
                     onClick={() => setShowReminder(false)} 
-                    className="py-3 bg-emerald-50 text-[#00C5A3] font-black text-xs uppercase tracking-wider rounded-xl cursor-pointer hover:bg-emerald-100/50"
+                    className="py-3 bg-gray-50 font-black text-xs uppercase tracking-wider rounded-xl cursor-pointer hover:bg-gray-100"
+                    style={{ color: brand.primaryColor }}
                   >
                     Recheck
                   </button>
                   <button 
                     id="execute-opay-done"
                     onClick={handleExecuteTransfer} 
-                    className="py-3 bg-[#00C5A3] text-white font-black text-xs uppercase tracking-wider rounded-xl cursor-pointer hover:brightness-105 shadow-md shadow-emerald-400/10"
+                    className="py-3 text-white font-black text-xs uppercase tracking-wider rounded-xl cursor-pointer hover:brightness-105 shadow-md"
+                    style={{ backgroundColor: brand.primaryColor }}
                   >
                     Continue
                   </button>
@@ -1018,85 +1140,35 @@ export default function AppSimulator({
           )}
         </div>
       );
-    }
-
-    // Default Bank Confirm
-    return (
-      <div className="bg-slate-900 text-slate-100 h-full flex flex-col justify-between">
-        <DeviceStatusBar dark={true} />
-        <div className="p-4 bg-slate-950 flex justify-between items-center border-b border-zinc-800">
-          <button onClick={() => setStep("transfer")} className="text-gray-400">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <span className="text-xs font-black uppercase text-gray-450 text-center flex-1">Authorize coordinates</span>
-        </div>
-
-        <div className="p-6 flex-1 space-y-4">
-          <div className="p-5 bg-slate-950 border border-slate-800/80 rounded-2xl text-center space-y-1">
-            <span className="text-[8.5px] tracking-widest text-[#00E5FF] font-black uppercase block">Signing Transaction Coordinates</span>
-            <h1 className="text-2xl font-black font-mono text-cyan-400">{formatCurrency(totalCost)}</h1>
-          </div>
-
-          <div className="bg-slate-950/50 border border-slate-900 rounded-2xl p-4.5 text-xs font-semibold space-y-2.5">
-            <div className="flex justify-between">
-              <span className="text-gray-400">Destination</span>
-              <span>{receiverName}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Bank Gate</span>
-              <span>{receiverBank}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4 bg-slate-950 border-t border-slate-900">
-          <button
-            onClick={handleExecuteTransfer}
-            className="w-full py-3.5 bg-gradient-to-r from-cyan-400 to-blue-500 text-gray-950 font-black text-xs uppercase rounded-xl shadow-lg"
-          >
-            Sign & Settle Transfer Order
-          </button>
-        </div>
-      </div>
-    );
-  };
+    };
 
   // ----------------------------------------------------------------------------------
   // RENDER LOADING SCREEN
   // ----------------------------------------------------------------------------------
   const renderLoadingScreen = () => {
-    if (bankName === "opay") {
-      return (
-        <div className="bg-white h-full flex flex-col items-center">
-          <DeviceStatusBar dark={false} />
-          
-          <div className="px-4 py-3.5 border-b border-gray-100 flex items-center justify-center w-full bg-white select-none">
-            <h1 className="text-xs font-black text-gray-600">Transaction Details</h1>
-          </div>
-
-          <div className="flex-1 flex flex-col justify-center items-center text-center p-6 space-y-4">
-            {/* Spinning OPay circle logo loop indicator */}
-            <div className="relative mb-4 flex items-center justify-center">
-              <div className="w-16 h-16 rounded-full border-4 border-emerald-100 border-t-[#00C5A3] animate-spin" />
-              <div className="absolute font-sans font-black text-[#00C5A3] text-xl">O</div>
-            </div>
-            
-            <h3 className="text-xs font-extrabold uppercase text-gray-400 tracking-widest">Processing Transaction</h3>
-            <p className="text-[10.5px] text-gray-500 max-w-[210px] leading-relaxed">
-              We are securely routing your funds to <span className="font-bold text-gray-900">{selectedContact ? selectedContact.name : receiverName}</span>. Please wait...
-            </p>
-          </div>
-        </div>
-      );
-    }
-
+    const brand = BANK_BRANDS[bankName] || BANK_BRANDS.opay;
     return (
-      <div className="bg-slate-950 h-full flex flex-col justify-center items-center text-center p-6 text-slate-100">
-        <Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" />
-        <h3 className="text-xs font-black uppercase text-gray-400 tracking-widest">NIP Node Verification</h3>
-        <p className="text-[10px] text-slate-400 mt-1 max-w-[200px]">
-          Transmitting settlement package to traditional system bank gate...
-        </p>
+      <div className="bg-white h-full flex flex-col items-center">
+        <DeviceStatusBar dark={false} />
+        
+        <div className="px-4 py-3.5 border-b border-gray-100 flex items-center justify-center w-full bg-white select-none">
+          <h1 className="text-xs font-black text-gray-600">Transaction Details</h1>
+        </div>
+
+        <div className="flex-1 flex flex-col justify-center items-center text-center p-6 space-y-4">
+          {/* Spinning Brand circle logo loop indicator */}
+          <div className="relative mb-4 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full border-4 border-gray-100 animate-spin" style={{ borderTopColor: brand.primaryColor }} />
+            <div className="absolute font-sans font-black text-xl animate-pulse" style={{ color: brand.primaryColor }}>
+              {brand.name.charAt(0).toUpperCase()}
+            </div>
+          </div>
+          
+          <h3 className="text-xs font-extrabold uppercase text-gray-400 tracking-widest text-[#00E5FF]/0">Processing Transaction</h3>
+          <p className="text-[10.5px] text-gray-500 max-w-[210px] leading-relaxed">
+            We are securely routing your funds to <span className="font-bold text-gray-900">{selectedContact ? selectedContact.name : receiverName}</span>. Please wait...
+          </p>
+        </div>
       </div>
     );
   };

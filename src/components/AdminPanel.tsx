@@ -153,6 +153,83 @@ export default function AdminPanel({ currentUserId, onSettingsUpdate, onRefreshU
     }
   };
 
+  const handleDeleteUserAdmin = async (userId: string, userEmail: string) => {
+    if (userId === "admin-123") {
+      alert("❌ Protect Error: Master administrator profile cannot be deleted.");
+      return;
+    }
+    const check1 = window.confirm(`⚠️ WARNING: Are you sure you want to permanently delete the user content and profile for ${userEmail}?`);
+    if (!check1) return;
+    const check2 = window.confirm(`🔥 FINAL OVERRULE WARNING: This will drop ${userEmail} completely from database records and wipe their active transactions. Confirm purge?`);
+    if (!check2) return;
+
+    try {
+      const res = await fetch("/api/admin/user/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentAdminId: currentUserId, userId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("💀 User account dropped successfully!");
+        fetchAdminData();
+        if (onRefreshUserPoints) onRefreshUserPoints();
+      } else {
+        alert(data.error || "Failed to drop user account.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Network transmission error.");
+    }
+  };
+
+  const handleModifyLogAdmin = async (log: ActivityLog) => {
+    const newAction = window.prompt(`Modify Activity Log Action type [${log.action}]:`, log.action);
+    if (newAction === null) return;
+    const newDetails = window.prompt("Modify Activity Log Details message description:", log.details);
+    if (newDetails === null) return;
+
+    try {
+      const res = await fetch("/api/admin/logs/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentAdminId: currentUserId,
+          logId: log.id,
+          action: newAction,
+          details: newDetails
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchAdminData();
+      } else {
+        alert(data.error || "Could not modify log audit.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteLogAdmin = async (logId: string) => {
+    if (!window.confirm("Permanently drop this log entry from the audit ledger?")) return;
+    try {
+      const res = await fetch("/api/admin/logs/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentAdminId: currentUserId, logId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchAdminData();
+      } else {
+        alert(data.error || "Failed to delete log entry.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="bg-[#0B0E14] border border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden font-sans text-white">
       {/* Header section with credentials flag */}
@@ -351,6 +428,16 @@ export default function AdminPanel({ currentUserId, onSettingsUpdate, onRefreshU
                             >
                               Overrule Balance
                             </button>
+                            {u.role !== "admin" && (
+                              <button
+                                id={`delete-user-${u.id}`}
+                                onClick={() => handleDeleteUserAdmin(u.id, u.email)}
+                                className="p-1 rounded bg-red-950/40 hover:bg-red-900 border border-red-500/30 text-rose-400 hover:text-white"
+                                title="Delete account permanently"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -580,13 +667,31 @@ export default function AdminPanel({ currentUserId, onSettingsUpdate, onRefreshU
               <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Activity trails audit</h3>
               <div className="bg-slate-950 p-4 border border-slate-900 rounded-2xl max-h-[350px] overflow-y-auto space-y-2.5 font-mono text-[10px]">
                 {logs.map((l) => (
-                  <div key={l.id} className="border-b border-slate-900/40 pb-2">
-                    <div className="flex justify-between text-rose-500 font-bold">
+                  <div key={l.id} className="border-b border-slate-900/40 pb-2 relative group animate-fadeIn">
+                    <div className="flex justify-between text-rose-500 font-bold items-center">
                       <span>[{l.action}]</span>
-                      <span className="text-gray-500">{new Date(l.timestamp).toLocaleTimeString()}</span>
+                      <div className="flex items-center gap-2 text-[9px] font-sans">
+                        <span className="text-gray-500 font-mono">{new Date(l.timestamp).toLocaleTimeString()}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleModifyLogAdmin(l)}
+                          className="px-1.5 py-0.5 bg-slate-900 hover:bg-slate-800 text-cyan-400 rounded border border-slate-800 transition-colors cursor-pointer text-[8px]"
+                          title="Modify Log details"
+                        >
+                          EDIT
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteLogAdmin(l.id)}
+                          className="px-1.5 py-0.5 bg-red-950/20 hover:bg-red-900 text-rose-400 rounded border border-slate-850 hover:text-white transition-colors cursor-pointer text-[8px]"
+                          title="Delete Log permanently"
+                        >
+                          DROP
+                        </button>
+                      </div>
                     </div>
                     <div className="text-slate-350 mt-0.5">Details: {l.details}</div>
-                    <div className="text-[9px] text-gray-400 mt-0.5">By: {l.user_email} • User-ID: {l.user_id}</div>
+                    <div className="text-[9px] text-gray-400 mt-0.5 text-slate-500">By: {l.user_email} • User-ID: {l.user_id}</div>
                   </div>
                 ))}
               </div>
