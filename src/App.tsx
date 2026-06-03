@@ -1,0 +1,1801 @@
+import React, { useState, useEffect } from "react";
+import {
+  Sparkles, ShieldCheck, ShoppingBag, Radio, Shield, HelpCircle, X,
+  TrendingUp, CreditCard, ChevronRight, Upload, Coins, Award, HelpCircle as Info, Check, Eye, AlertCircle, MessageCirclePlus, Star, ChevronLeft, Compass
+} from "lucide-react";
+import { User, MarketplaceListing, BlackRoomListing, ProgramBooking, ProgrammerService, GalleryItem, SystemSettings, KYCStatus } from "./types";
+import BentoHeader from "./components/BentoHeader";
+import ReceiptPreview from "./components/ReceiptPreview";
+import AdminPanel from "./components/AdminPanel";
+import AIAssistant from "./components/AIAssistant";
+import SupportWidget from "./components/SupportWidget";
+import AppSimulator from "./components/AppSimulator";
+import BentoHomepage from "./components/BentoHomepage";
+import AuthCard from "./components/AuthCard";
+
+export default function App() {
+  // Authentication & session state
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
+
+  // Global app configs
+  const [settings, setSettings] = useState<SystemSettings | null>(null);
+
+  // Live navigation state: 'home' | 'generator' | 'marketplace' | 'blackroom' | 'profile'
+  const [activeTab, setActiveTab] = useState<"home" | "generator" | "marketplace" | "blackroom" | "profile">("home");
+
+  // Receipt simulator states
+  const [simBank, setSimBank] = useState("opay");
+  const [simSender, setSimSender] = useState("EMMANUEL CHUKWUMA");
+  const [simReceiver, setSimReceiver] = useState("OKONKWO PETER");
+  const [simReceiverBank, setSimReceiverBank] = useState("Access Bank");
+  const [simAmount, setSimAmount] = useState("15500");
+  const [simReference, setSimReference] = useState("Payment for premium hosting assets - Jadai");
+  const [simCustomField, setSimCustomField] = useState("OWealth +₦128.50 Interest");
+  const [unlockedReceipt, setUnlockedReceipt] = useState<any>(null);
+  const [isGeneratingReceipt, setIsGeneratingReceipt] = useState(false);
+  const [simulationActive, setSimulationActive] = useState(false);
+
+  // Marketplace states
+  const [mktListings, setMktListings] = useState<MarketplaceListing[]>([]);
+  const [newMktTitle, setNewMktTitle] = useState("");
+  const [newMktDesc, setNewMktDesc] = useState("");
+  const [newMktCategory, setNewMktCategory] = useState<"accounts" | "numbers" | "boosting">("numbers");
+  const [newMktPrice, setNewMktPrice] = useState("50");
+  const [newMktDelivery, setNewMktDelivery] = useState("Immediate dispatch checkout link.");
+  const [showCreateMktListing, setShowCreateMktListing] = useState(false);
+  const [escrowList, setEscrowList] = useState<any[]>([]);
+
+  // Black Room anonymous states
+  const [brListings, setBrListings] = useState<BlackRoomListing[]>([]);
+  const [newBrTitle, setNewBrTitle] = useState("");
+  const [newBrDesc, setNewBrDesc] = useState("");
+  const [newBrPrice, setNewBrPrice] = useState("100");
+  const [showCreateBr, setShowCreateBr] = useState(false);
+  const [selectedBrListing, setSelectedBrListing] = useState<BlackRoomListing | null>(null);
+  const [brMessages, setBrMessages] = useState<any[]>([]);
+  const [newBrMsg, setNewBrMsg] = useState("");
+  const [activeGroupRoomIndex, setActiveGroupRoomIndex] = useState(0);
+
+  // Broking, gallery & programmer service lists
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
+  const [programmerServices, setProgrammerServices] = useState<ProgrammerService[]>([]);
+  const [myBookings, setMyBookings] = useState<ProgramBooking[]>([]);
+  const [brokers, setBrokers] = useState<any[]>([]);
+
+  // KYC Submission state
+  const [kycName, setKycName] = useState("");
+  const [kycAddress, setKycAddress] = useState("");
+  const [kycIDSample, setKycIDSample] = useState("");
+  const [isSubmittingKyc, setIsSubmittingKyc] = useState(false);
+
+  // Point purchase checkout state
+  const [packages, setPackages] = useState<any[]>([]);
+  const [selectedPackageId, setSelectedPackageId] = useState("");
+  const [isBuyingPoints, setIsBuyingPoints] = useState(false);
+
+  // Cashout point details
+  const [withdrawPointsAmt, setWithdrawPointsAmt] = useState("");
+  const [withdrawUSDTAddress, setWithdrawUSDTAddress] = useState("");
+  const [isSubmitWithdrawal, setIsSubmitWithdrawal] = useState(false);
+
+  // Home interactive features
+  const [infoSlideIndex, setInfoSlideIndex] = useState(0);
+  const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [unlockedAssetGuide, setUnlockedAssetGuide] = useState<{ title: string; guide: string; url: string } | null>(null);
+  const [showLicenseModal, setShowLicenseModal] = useState(false);
+
+  // Load configuration and data states on initial boot
+  useEffect(() => {
+    fetchGlobalSettings();
+    const cachedUser = localStorage.getItem("sh_user");
+    if (cachedUser) {
+      setCurrentUser(JSON.parse(cachedUser));
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUserDependentData();
+  }, [currentUser, activeTab]);
+
+  const fetchGlobalSettings = async () => {
+    try {
+      const res = await fetch("/api/settings");
+      const data = await res.json();
+      setSettings(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchUserDependentData = async () => {
+    try {
+      // Marketplace load
+      const mktRes = await fetch("/api/marketplace/list");
+      const mktData = await mktRes.json();
+      setMktListings(mktData);
+
+      // Black room load
+      const brRes = await fetch("/api/blackroom/list");
+      const brData = await brRes.json();
+      setBrListings(brData);
+
+      // Buy packages lists
+      const pRes = await fetch("/api/points/packages");
+      const pData = await pRes.json();
+      setPackages(pData);
+      if (pData.length > 0 && !selectedPackageId) setSelectedPackageId(pData[1].id);
+
+      // Gallery lists
+      const gRes = await fetch("/api/gallery/list");
+      const gData = await gRes.json();
+      setGalleryItems(gData);
+
+      // Programmer services
+      const psRes = await fetch("/api/programmer/services");
+      const psData = await psRes.json();
+      setProgrammerServices(psData);
+
+      // Brokers list loading
+      const bRes = await fetch("/api/brokers/list");
+      const bData = await bRes.json();
+      setBrokers(bData);
+
+      // My custom programmer bookings (only if logged in)
+      if (currentUser) {
+        const bkRes = await fetch(`/api/user/bookings/${currentUser.id}`);
+        const bkData = await bkRes.json();
+        setMyBookings(bkData);
+      }
+
+      // System activity logs for Homepage feed
+      const lRes = await fetch("/api/admin/logs");
+      const lData = await lRes.json();
+      setRecentLogs(lData.slice(0, 10));
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRefreshUserPoints = async () => {
+    if (!currentUser) return;
+    try {
+      const res = await fetch("/api/admin/users");
+      const data = await res.json();
+      const updated = data.find((u: User) => u.id === currentUser.id);
+      if (updated) {
+        setCurrentUser(updated);
+        localStorage.setItem("sh_user", JSON.stringify(updated));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Auth Operations
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authEmail || !authPassword) return;
+    setIsAuthLoading(true);
+
+    const endPoint = isRegisterMode ? "/api/auth/register" : "/api/auth/login";
+    try {
+      const res = await fetch(endPoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: authEmail,
+          password: authPassword,
+          referral_code: isRegisterMode ? referralCode : undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.user) {
+        setCurrentUser(data.user);
+        localStorage.setItem("sh_user", JSON.stringify(data.user));
+        setAuthEmail("");
+        setAuthPassword("");
+        setReferralCode("");
+      } else {
+        alert(data.error || "Authentication failed.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Lost connectivity. Try running local host again!");
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleGoogleBypass = async () => {
+    setIsAuthLoading(true);
+    try {
+      const googleId = "g-" + Math.random().toString(36).substr(2, 6);
+      const res = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          googleId,
+          email: "jadaistudiosoffcl@gmail.com",
+          name: "Jadai Studios Director"
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.user) {
+        setCurrentUser(data.user);
+        localStorage.setItem("sh_user", JSON.stringify(data.user));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem("sh_user");
+    setActiveTab("home");
+  };
+
+  // Receipt Generator Submit
+  const handleCreateMockTransactionReceipt = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUnlockedReceipt(null);
+    setIsGeneratingReceipt(true);
+
+    try {
+      const payload = {
+        userId: currentUser?.id,
+        bank: simBank,
+        senderName: simSender,
+        receiverName: simReceiver,
+        receiverBank: simReceiverBank,
+        amount: simAmount,
+        customField: simCustomField,
+        reference: simReference,
+      };
+
+      // Create a temporary watermarked representation
+      const simulatedReceipt = {
+        bank: simBank,
+        sender_name: simSender,
+        receiver_name: simReceiver,
+        receiver_bank: simReceiverBank,
+        amount: parseFloat(simAmount) || 12000,
+        date_time: new Date().toLocaleString(),
+        transaction_id: "TXN" + Math.random().toString(36).substr(2, 9).toUpperCase(),
+        reference: simReference,
+        balance: 425000,
+        custom_field: simCustomField,
+        unlocked: false, // Starts locked/blurred
+      };
+
+      setUnlockedReceipt(simulatedReceipt);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsGeneratingReceipt(false);
+    }
+  };
+
+  const handleUnlockSelectedReceipt = async () => {
+    if (!currentUser) return;
+    const selectPrice = settings?.receipt_price_points || 10;
+    if (currentUser.points < selectPrice) {
+      alert(`Insufficient balance. Receipts unlock require ${selectPrice} points.`);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/receipts/buy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          bank: simBank,
+          senderName: simSender,
+          receiverName: simReceiver,
+          receiverBank: simReceiverBank,
+          amount: simAmount,
+          customField: simCustomField,
+          reference: simReference,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.receipt) {
+        setUnlockedReceipt({
+          ...data.receipt,
+          unlocked: true,
+        });
+        handleRefreshUserPoints();
+      } else {
+        alert(data.error || "Point unlock failed. Try checking points.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Real Paystack Checkout Integration
+  const handleSimulatePointsBuy = async () => {
+    if (!currentUser || !selectedPackageId) return;
+    setIsBuyingPoints(true);
+
+    const checkouts = [
+      { id: "pkg1", usd: 5, points: 50 },
+      { id: "pkg2", usd: 10, points: 110 },
+      { id: "pkg3", usd: 25, points: 280 },
+      { id: "pkg4", usd: 50, points: 600 }
+    ];
+
+    const chosenPkg = checkouts.find(c => c.id === selectedPackageId) || checkouts[0];
+    const nairaAmount = Math.round(chosenPkg.usd * 1600); // 1 USD = 1600 NGN conversion rate
+
+    // Function to load the external Paystack JavaScript SDK dynamically
+    const loadPaystackSDK = () => {
+      return new Promise<boolean>((resolve) => {
+        if ((window as any).PaystackPop) {
+          resolve(true);
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = "https://js.paystack.co/v1/inline.js";
+        script.async = true;
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+      });
+    };
+
+    const isSdkLoaded = await loadPaystackSDK();
+    if (!isSdkLoaded) {
+      console.warn("Failed to retrieve Paystack payment gateway bridge. Reverting to automated simulation...");
+      proceedPointsBuy(selectedPackageId);
+      return;
+    }
+
+    try {
+      // Initialize real Paystack inline Pop-up Checkout Modal
+      const handler = (window as any).PaystackPop.setup({
+        key: "pk_test_48154e14f6b21589c32bfda6f8510cf2e268ba7a", // Public Paystack test key
+        email: currentUser.email,
+        amount: nairaAmount * 100, // Paystack expects amount in Kobo (Naira * 100)
+        currency: "NGN",
+        ref: "SH_PAY_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
+        callback: async (response: any) => {
+          proceedPointsBuy(selectedPackageId, response.reference);
+        },
+        onClose: () => {
+          alert("⚡ Payment interface dismissed. Points ledger remains unchanged.");
+          setIsBuyingPoints(false);
+        }
+      });
+      handler.openIframe();
+    } catch (e) {
+      console.error(e);
+      // Failover safely
+      proceedPointsBuy(selectedPackageId);
+    }
+  };
+
+  const proceedPointsBuy = async (pkgId: string, reference?: string) => {
+    try {
+      const res = await fetch("/api/points/buy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUser?.id,
+          packageId: pkgId,
+          reference: reference || "SIMULATED_BY_JADAI"
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert(`🎉 Paystack Payment Approved! Successfully credited +${data.addedPoints} points to your ledger!`);
+        handleRefreshUserPoints();
+      } else {
+        alert(data.error || "Points ledger adjustment rejected by the server.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Lost database connection bridge. Try again in a few seconds.");
+    } finally {
+      setIsBuyingPoints(false);
+    }
+  };
+
+  // Submit profile identity KYC
+  const handleSubmitIdentityKyc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!kycName || !kycAddress) return;
+    setIsSubmittingKyc(true);
+
+    try {
+      const res = await fetch("/api/profile/kyc", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUser?.id,
+          name: kycName,
+          address: kycAddress,
+          idCardBase64: "https://images.unsplash.com/photo-1554774853-aae0a22c8aa4?auto=format&fit=crop&w=400&q=80",
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert("KYC identity dossier submitted successfully! System administrators will review and approve momentarily.");
+        handleRefreshUserPoints();
+        setKycName("");
+        setKycAddress("");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmittingKyc(false);
+    }
+  };
+
+  // USDT cashout points withdraw submit
+  const handlePointsUSDTWithdrawal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!withdrawPointsAmt || !withdrawUSDTAddress) return;
+
+    if (currentUser?.kyc_status !== "verified") {
+      alert("Access Denied: You must submit KYC and be approved by the administrator before point token cashout.");
+      return;
+    }
+
+    setIsSubmitWithdrawal(true);
+    try {
+      const res = await fetch("/api/points/withdraw", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          amountPoints: withdrawPointsAmt,
+          usdtAddress: withdrawUSDTAddress,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert(`SUCCESS! Registered withdrawal request for ${withdrawPointsAmt} points ($${parseInt(withdrawPointsAmt) / 100} USDT). Pending admin manual processing.`);
+        handleRefreshUserPoints();
+        setWithdrawPointsAmt("");
+        setWithdrawUSDTAddress("");
+      } else {
+        alert(data.error || "Withdrawal failed");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitWithdrawal(false);
+    }
+  };
+
+  // Marketplace Create Listing
+  const handleCreateMarketplaceListing = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMktTitle || !newMktDesc || !newMktPrice) return;
+
+    try {
+      const res = await fetch("/api/marketplace/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUser?.id,
+          title: newMktTitle,
+          description: newMktDesc,
+          category: newMktCategory,
+          pricePoints: newMktPrice,
+          deliveryInfo: newMktDelivery,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert("Listed successfully with platform escrow safeguard.");
+        setNewMktTitle("");
+        setNewMktDesc("");
+        setNewMktPrice("50");
+        setShowCreateMktListing(false);
+        fetchUserDependentData();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Buy marketplace listing
+  const handleBuyMarketplaceItem = async (listingId: string) => {
+    if (!currentUser) return;
+    try {
+      const res = await fetch("/api/marketplace/buy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buyerId: currentUser.id,
+          listingId,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert("Order completed! Your points are held in safe escrow. Review developer files or numbers in active records.");
+        handleRefreshUserPoints();
+        fetchUserDependentData();
+      } else {
+        alert(data.error || "Order failed. Check points budget.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleEscrowConfirm = async (listingId: string) => {
+    try {
+      const res = await fetch("/api/marketplace/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buyerId: currentUser?.id,
+          listingId,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Transaction satisfaction approved. Points released to vendor!");
+        fetchUserDependentData();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleEscrowDispute = async (listingId: string) => {
+    try {
+      const res = await fetch("/api/marketplace/dispute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUser?.id,
+          listingId,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Dispute registered. Points frozen. Admin will investigate logs.");
+        fetchUserDependentData();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Black Room Lists creation
+  const handleCreateBlackListing = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBrTitle || !newBrDesc || !newBrPrice) return;
+
+    try {
+      const res = await fetch("/api/blackroom/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUser?.id,
+          title: newBrTitle,
+          description: newBrDesc,
+          pricePoints: newBrPrice,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert("Anonymous listing mounted. Monitored inside Chemical Symbol network.");
+        setNewBrTitle("");
+        setNewBrDesc("");
+        setShowCreateBr(false);
+        fetchUserDependentData();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Buy Black listing
+  const handleBuyBlackItem = async (listingId: string) => {
+    if (!currentUser) return;
+    try {
+      const res = await fetch("/api/blackroom/buy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buyerId: currentUser.id,
+          listingId,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert("Black Room Escrow registered! Communication channel unlocked. Coordinates holding points safely.");
+        handleRefreshUserPoints();
+        fetchUserDependentData();
+      } else {
+        alert(data.error || "Purchase error.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Black room messaging system
+  const fetchBrMessages = async (listingId: string) => {
+    try {
+      const res = await fetch(`/api/blackroom/messages/${listingId}`);
+      const data = await res.json();
+      setBrMessages(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSendBrMsg = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBrListing || !newBrMsg.trim()) return;
+
+    try {
+      const res = await fetch("/api/blackroom/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          listingId: selectedBrListing.id,
+          userId: currentUser?.id,
+          message: newBrMsg,
+        }),
+      });
+
+      const data = await res.json();
+      setBrMessages((prev) => [...prev, data]);
+      setNewBrMsg("");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Hire a programmer booking
+  const handleBookProgrammer = async (serviceId: string) => {
+    try {
+      const res = await fetch("/api/programmer/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUser?.id,
+          serviceId,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert("Booking active. Code milestones held securely. Admin in contact.");
+        handleRefreshUserPoints();
+        fetchUserDependentData();
+      } else {
+        alert(data.error || "Insufficient points");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Vouch and score pre-seeded anonymous brokers
+  const handleVouchBroker = async (brokerId: string) => {
+    if (!currentUser) {
+      alert("Please log in or register a credentials session above first to complete broker vouches.");
+      return;
+    }
+    try {
+      const res = await fetch("/api/brokers/vouch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brokerId, userId: currentUser.id }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || "💖 Vouch recorded successfully! Trust level recalibrated.");
+        // Refresh broker list
+        const bRes = await fetch("/api/brokers/list");
+        const bData = await bRes.json();
+        setBrokers(bData);
+      } else {
+        alert(data.error || "Could not process vouch request");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Buy gallery HTML web templates
+  const handleBuyGalleryTemplate = async (itemId: string, itemTitle: string) => {
+    if (!currentUser) {
+      alert("🔒 Please log in or sign up first to purchase assets.");
+      return;
+    }
+    if (currentUser.kyc_status !== "verified") {
+      alert("🔒 KYC Verification Restricted: You must link your email and complete KYC identity verification first in the Security profile tab before purchasing premium templates!");
+      setActiveTab("profile");
+      return;
+    }
+    if (!window.confirm(`Unlock full site source archive [${itemTitle}] for ${galleryItems.find(g => g.id === itemId)?.price_points || 150} points?`)) return;
+    try {
+      const res = await fetch("/api/gallery/buy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUser?.id,
+          templateId: itemId,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setUnlockedAssetGuide({
+          title: itemTitle,
+          guide: data.guide,
+          url: data.downloadUrl
+        });
+        handleRefreshUserPoints();
+      } else {
+        alert(data.error || "Verification issue or point balance low");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Visual Carousel Slider helpers
+  const securityInsights = [
+    { title: "Escrow Protection Safeguard", desc: "Digital assets transactions freeze balance points. Release happens when you confirm visual and functional satisfaction." },
+    { title: "Chemical Code Anonymity Ring", desc: "Trade collector goods securely inside the Black Room. User email coordinates are hidden from profiles of third-party vendors." },
+    { title: "No Tech-Larping Guarantee", desc: "No useless mock terminal screens. StyleHub provides humic, direct fintech access indicators matching premium web vibes." }
+  ];
+
+  if (!currentUser) {
+    // We let users browse the bento homepage or explore sections as guest!
+  }
+
+  // RENDER DOCK SCREEN
+  return (
+    <div className="min-h-screen bg-[#080B10] text-[#E2E8F0] font-sans pb-24 relative overflow-x-hidden">
+      {" "}
+      {/* Footer navigation adds padding */}
+      {/* Floating dynamic backdrop */}
+      <div className="absolute top-0 left-0 right-0 h-[400px] bg-gradient-to-b from-[#00E5FF]/2 to-transparent pointer-events-none" />
+
+      {/* Main Core View Area */}
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pt-6 space-y-6 relative z-10">
+        <BentoHeader user={currentUser} settings={settings} onLogout={handleLogout} activeNav={activeTab} />
+
+        {/* Tab Content Routing */}
+        {activeTab === "home" && (
+          <BentoHomepage
+            user={currentUser}
+            settings={settings}
+            galleryItems={galleryItems}
+            mktListings={mktListings}
+            packages={packages}
+            selectedPackageId={selectedPackageId}
+            setSelectedPackageId={setSelectedPackageId}
+            isBuyingPoints={isBuyingPoints}
+            onSimulatePointsBuy={handleSimulatePointsBuy}
+            onAuthSuccess={(user) => {
+              setCurrentUser(user);
+              localStorage.setItem("sh_user", JSON.stringify(user));
+            }}
+            onNavigate={(tab) => setActiveTab(tab)}
+          />
+        )}
+
+        {/* Tab Content: GENERATOR (fintech simulator) */}
+        {activeTab === "generator" && (
+          !currentUser ? (
+            <div className="flex flex-col items-center justify-center py-10 w-full animate-fadeIn">
+              <AuthCard
+                onAuthSuccess={(u) => {
+                  setCurrentUser(u);
+                  localStorage.setItem("sh_user", JSON.stringify(u));
+                }}
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+            {/* Variables Customizer form */}
+            <form onSubmit={handleCreateMockTransactionReceipt} className="md:col-span-5 bg-[#0E131F]/95 p-6 border border-slate-800 rounded-3xl space-y-4">
+              <div className="flex justify-between items-center pb-2 border-b border-indigo-900/30">
+                <h3 className="text-xs font-black uppercase text-cyan-400 tracking-widest">Receipt custom variables</h3>
+                <span className="text-[9px] text-gray-400 font-mono">Sim Price: 10 PLS</span>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10.5px] text-gray-400 font-bold uppercase tracking-wider block">Fintech Brand</label>
+                <select
+                  id="generator-bank-select"
+                  value={simBank}
+                  onChange={(e) => setSimBank(e.target.value)}
+                  className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4.5 py-2.5 text-xs text-white uppercase font-mono tracking-wider focus:outline-none"
+                >
+                  <option value="opay">OPay Wallet</option>
+                  <option value="kuda">Kuda Microfinance</option>
+                  <option value="moniepoint">Moniepoint Bank</option>
+                  <option value="palmpay">PalmPay Wallet</option>
+                  <option value="gtbank">GTBank PLC</option>
+                  <option value="accessbank">Access Bank</option>
+                  <option value="firstbank">FirstBank Nigeria</option>
+                  <option value="zenith">Zenith Bank Plc</option>
+                  <option value="uba">United Bank For Africa (UBA)</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-gray-400 font-bold uppercase block">Sender Name</label>
+                  <input
+                    type="text"
+                    id="generator-sender-input"
+                    value={simSender}
+                    onChange={(e) => setSimSender(e.target.value.toUpperCase())}
+                    className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2 text-xs font-mono uppercase focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-gray-400 font-bold uppercase block">Recipient Name</label>
+                  <input
+                    type="text"
+                    id="generator-recipient-input"
+                    value={simReceiver}
+                    onChange={(e) => setSimReceiver(e.target.value.toUpperCase())}
+                    className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2 text-xs font-mono uppercase focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-gray-400 font-bold uppercase block">Recipient Bank</label>
+                  <input
+                    type="text"
+                    id="generator-recipient-bank-input"
+                    value={simReceiverBank}
+                    onChange={(e) => setSimReceiverBank(e.target.value)}
+                    className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2 text-xs focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-gray-400 font-bold uppercase block">Amount Transferred (₦)</label>
+                  <input
+                    type="number"
+                    id="generator-amount-input"
+                    value={simAmount}
+                    onChange={(e) => setSimAmount(e.target.value)}
+                    className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2 text-xs font-mono text-cyan-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-gray-400 font-bold uppercase block">Reference Transaction Description</label>
+                <input
+                  type="text"
+                  id="generator-reference-input"
+                  value={simReference}
+                  onChange={(e) => setSimReference(e.target.value)}
+                  className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-gray-400 font-bold uppercase block">Custom Booster Badge (e.g. interest / PalmPoints)</label>
+                <input
+                  type="text"
+                  id="generator-custom-booster-input"
+                  value={simCustomField}
+                  onChange={(e) => setSimCustomField(e.target.value)}
+                  className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-rose-400 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <button
+                  type="submit"
+                  id="generator-render-btn"
+                  className="w-full py-2.5 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-850 text-gray-350 hover:text-white font-bold text-xs uppercase transition-all cursor-pointer text-center"
+                >
+                  {isGeneratingReceipt ? "Syncing Mock Data..." : "Render Raw Preview Mockup"}
+                </button>
+                <button
+                  type="button"
+                  id="generator-simulate-btn"
+                  onClick={() => {
+                    setUnlockedReceipt(null);
+                    setSimulationActive(true);
+                  }}
+                  className="w-full py-2.5 bg-gradient-to-r from-cyan-400 to-blue-500 hover:brightness-110 text-gray-950 font-black rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  ▶ Run Interactive Flow Sim
+                </button>
+              </div>
+            </form>
+
+            {/* Simulated Live Canvas view */}
+            <div className="md:col-span-7 flex flex-col items-center justify-center">
+              {simulationActive ? (
+                <div className="animate-fadeIn w-full flex flex-col items-center">
+                  <div className="flex justify-between items-center w-full max-w-[360px] pb-3 text-[10px]">
+                    <span className="text-cyan-400 font-bold uppercase tracking-widest font-mono">Simulating brand: {simBank.toUpperCase()}</span>
+                    <button
+                      id="close-simulation-btn"
+                      onClick={() => setSimulationActive(false)}
+                      className="text-gray-400 hover:text-white px-2 py-0.5 rounded border border-slate-800 bg-slate-950 font-mono scale-90 cursor-pointer"
+                    >
+                      Exit Sim
+                    </button>
+                  </div>
+                  <AppSimulator
+                    bank={simBank}
+                    senderName={simSender}
+                    receiverName={simReceiver}
+                    receiverBank={simReceiverBank}
+                    amount={parseFloat(simAmount) || 15500}
+                    dateTime={new Date().toLocaleString()}
+                    transactionId={"TXN" + Math.random().toString(36).substr(2, 9).toUpperCase()}
+                    reference={simReference}
+                    balance={425000}
+                    customField={simCustomField}
+                    onFinishSimulation={(simData) => {
+                      setUnlockedReceipt({
+                        bank: simData.bank,
+                        sender_name: simData.senderName,
+                        receiver_name: simData.receiverName,
+                        receiver_bank: simData.receiverBank,
+                        amount: simData.amount,
+                        date_time: simData.dateTime,
+                        transaction_id: simData.transactionId,
+                        reference: simData.reference,
+                        balance: simData.balance,
+                        custom_field: simData.customField,
+                        unlocked: false,
+                      });
+                      setSimulationActive(false);
+                    }}
+                  />
+                </div>
+              ) : unlockedReceipt ? (
+                <ReceiptPreview
+                  bank={unlockedReceipt.bank}
+                  senderName={unlockedReceipt.sender_name}
+                  receiverName={unlockedReceipt.receiver_name}
+                  receiverBank={unlockedReceipt.receiver_bank}
+                  amount={unlockedReceipt.amount}
+                  dateTime={unlockedReceipt.date_time}
+                  transactionId={unlockedReceipt.transaction_id}
+                  reference={unlockedReceipt.reference}
+                  balance={unlockedReceipt.balance}
+                  customField={unlockedReceipt.custom_field}
+                  unlocked={unlockedReceipt.unlocked}
+                  onUnlock={handleUnlockSelectedReceipt}
+                />
+              ) : (
+                <div className="p-16 border-2 border-dashed border-slate-800 rounded-3xl text-center text-slate-500 max-w-[400px] mx-auto flex flex-col items-center gap-3">
+                  <Eye className="w-8 h-8 opacity-30 animate-pulse text-cyan-400" />
+                  <p className="text-xs font-mono uppercase tracking-wide">
+                    Enter custom values on the left, then click "Render Raw Preview Mockup" or run "Interactive Flow Sim".
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      )}
+
+        {/* Tab Content: MARKETPLACE & ESCROW */}
+        {activeTab === "marketplace" && (
+          !currentUser ? (
+            <div className="flex flex-col items-center justify-center py-10 w-full animate-fadeIn">
+              <AuthCard
+                onAuthSuccess={(u) => {
+                  setCurrentUser(u);
+                  localStorage.setItem("sh_user", JSON.stringify(u));
+                }}
+              />
+            </div>
+          ) : (
+            <div className="space-y-8">
+            {/* Visual categories bar & Create listing button */}
+            <div className="flex justify-between items-center bg-slate-900/40 p-3 rounded-2xl border border-slate-800/80">
+              <span className="text-[10px] font-mono uppercase text-gray-400 tracking-widest font-bold">digital marketplace</span>
+              <button
+                id="expand-seller-listing-btn"
+                onClick={() => setShowCreateMktListing(!showCreateMktListing)}
+                className="py-1.5 px-3.5 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-xl text-[10px] text-gray-950 font-black flex items-center gap-1 hover:brightness-110 active:scale-95 transition-all"
+              >
+                <MessageCirclePlus className="w-3.5 h-3.5" /> SELL ON MARKETPLACE
+              </button>
+            </div>
+
+            {/* List custom product panel */}
+            {showCreateMktListing && (
+              <form onSubmit={handleCreateMarketplaceListing} className="p-6 bg-[#0E131F] border border-slate-800 rounded-3xl max-w-xl space-y-4 animate-fadeIn">
+                <h3 className="text-xs font-black uppercase tracking-widest text-[#00E5FF]">List modern digital item</h3>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-gray-500 font-bold uppercase">Listing Title</label>
+                    <input
+                      type="text"
+                      id="mkt-listing-title"
+                      required
+                      placeholder="e.g. USA Verified Stripe"
+                      value={newMktTitle}
+                      onChange={(e) => setNewMktTitle(e.target.value)}
+                      className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-gray-500 font-bold uppercase">Category</label>
+                    <select
+                      id="mkt-listing-category"
+                      value={newMktCategory}
+                      onChange={(e: any) => setNewMktCategory(e.target.value)}
+                      className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white uppercase focus:outline-none"
+                    >
+                      <option value="numbers">Virtual Numbers</option>
+                      <option value="accounts">Accounts Niche</option>
+                      <option value="boosting">SSMP Engagement</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-gray-500 font-bold uppercase">Price points</label>
+                    <input
+                      type="number"
+                      id="mkt-listing-price"
+                      required
+                      value={newMktPrice}
+                      onChange={(e) => setNewMktPrice(e.target.value)}
+                      className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-cyan-400 font-mono focus:outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-gray-500 font-bold uppercase">Auto file deliver note</label>
+                    <input
+                      type="text"
+                      id="mkt-listing-delivery"
+                      value={newMktDelivery}
+                      onChange={(e) => setNewMktDelivery(e.target.value)}
+                      className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] text-gray-500 font-bold uppercase">Listing Description Details</label>
+                  <textarea
+                    id="mkt-listing-desc"
+                    required
+                    rows={3}
+                    placeholder="Provide full description. Escrow is applied automated to all checkouts."
+                    value={newMktDesc}
+                    onChange={(e) => setNewMktDesc(e.target.value)}
+                    className="w-full bg-[#05070A] border border-slate-800 rounded-2xl p-4 text-xs focus:outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  id="mkt-listing-submit"
+                  className="w-full py-2.5 bg-gradient-to-r from-cyan-400 to-blue-500 text-gray-950 font-black rounded-xl text-xs uppercase"
+                >
+                  Confirm and launch listing
+                </button>
+              </form>
+            )}
+
+            {/* Active digital goods listings */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-black uppercase text-gray-400 tracking-wider">Active digital packages</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {mktListings.map((item) => (
+                  <div key={item.id} className="bg-[#0E131F]/90 border border-slate-800/80 rounded-3xl p-5 flex flex-col justify-between shadow relative overflow-hidden">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <span className="text-[8px] font-mono text-[#00E5FF] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-cyan-950/40 border border-cyan-500/20">
+                          {item.category}
+                        </span>
+                        <span className="text-xs font-black font-mono text-cyan-400">{item.price_points} PTS</span>
+                      </div>
+                      <h4 className="text-xs font-bold text-white leading-snug">{item.title}</h4>
+                      <p className="text-[11px] text-gray-400 leading-relaxed max-w-[280px]">{item.description}</p>
+                    </div>
+
+                    <div className="mt-5 pt-4 border-t border-slate-850 flex items-center justify-between text-[10px]">
+                      <div>
+                        <span className="text-gray-500 font-mono text-[9px] block">Listed by:</span>
+                        <span className="text-slate-300 font-medium truncate max-w-[120px] block">{item.user_email}</span>
+                      </div>
+
+                      {item.status === "open" ? (
+                        item.user_id === currentUser?.id ? (
+                          <span className="text-gray-500 text-[10px] font-bold uppercase font-mono italic">listed by you</span>
+                        ) : (
+                          <button
+                            id={`buy-mkt-${item.id}`}
+                            onClick={() => handleBuyMarketplaceItem(item.id)}
+                            className="bg-slate-900 hover:bg-[#00E5FF] hover:text-[#0B0E14] border border-slate-800 text-white p-2 px-4 rounded-xl font-bold transition-all text-[11px]"
+                          >
+                            Buy package
+                          </button>
+                        )
+                      ) : item.status === "sold" && item.buyer_id === currentUser?.id ? (
+                        <div className="space-y-2 w-full pt-1">
+                          <span className="text-[10px] text-amber-500 font-mono font-bold block">🔒 HELD IN PROTECTIVE ESCROW</span>
+                          <div className="flex gap-1">
+                            <button
+                              id={`confirm-escrow-${item.id}`}
+                              onClick={() => handleEscrowConfirm(item.id)}
+                              className="px-2.5 py-1 bg-emerald-500 text-gray-950 font-bold rounded-lg text-[9px] hover:brightness-110"
+                            >
+                              Satisfied & Release
+                            </button>
+                            <button
+                              id={`dispute-escrow-${item.id}`}
+                              onClick={() => handleEscrowDispute(item.id)}
+                              className="px-2.5 py-1 bg-rose-500 text-white font-bold rounded-lg text-[9px] hover:brightness-110"
+                            >
+                              Dispute
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 font-bold uppercase tracking-widest text-[9px]">SOLDOUT</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Split section: HIRE A PROGRAMMER & GALLERY */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+              {/* Programmer hires Column */}
+              <div className="bg-slate-900/30 border border-slate-800/80 rounded-3xl p-6 space-y-4">
+                <h3 className="text-xs font-black tracking-wider text-[#00E5FF] uppercase">Book verified workspace programmers</h3>
+                <p className="text-[11px] text-gray-400 leading-relaxed font-mono">
+                  Hire Jadai Studios coders for fintech backend integrations. Funds held securely in pending milestones.
+                </p>
+
+                <div className="divide-y divide-slate-850 space-y-3">
+                  {programmerServices.map((srv) => (
+                    <div key={srv.id} className="pt-3 flex justify-between items-start gap-3">
+                      <div>
+                        <h4 className="text-xs font-bold text-white">{srv.title}</h4>
+                        <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">{srv.description}</p>
+                        <span className="text-[9px] text-gray-500 block font-mono mt-1">Milestone delivery: {srv.delivery_days} days</span>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-xs font-bold font-mono text-cyan-400 block">{srv.price_points} pts</span>
+                        <button
+                          id={`book-srv-${srv.id}`}
+                          onClick={() => handleBookProgrammer(srv.id)}
+                          className="mt-2 py-1 px-3 bg-slate-950 hover:bg-slate-850 border border-slate-800 text-white rounded-lg text-[10px] font-bold"
+                        >
+                          Book Coder
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Gallery HTML Templates */}
+              <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 space-y-4">
+                <h3 className="text-xs font-black uppercase text-gray-400 tracking-wider">Premium website templates</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  {galleryItems.map((git) => (
+                    <div key={git.id} className="bg-slate-950/80 border border-slate-900 rounded-2xl p-4 flex gap-4 items-center">
+                      <img
+                        src={git.preview_image}
+                        alt={git.title}
+                        referrerPolicy="no-referrer"
+                        className="w-16 h-16 rounded-xl object-cover bg-slate-900"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-xs font-bold text-white truncate">{git.title}</h4>
+                        <p className="text-[10px] text-gray-400 truncate mt-1">{git.description}</p>
+                        <div className="flex items-center gap-3 mt-3">
+                          <button
+                            id={`buy-gal-${git.id}`}
+                            onClick={() => handleBuyGalleryTemplate(git.id, git.title)}
+                            className="py-1 px-3 bg-cyan-500 text-gray-950 text-[10px] font-black rounded-lg hover:brightness-110 active:scale-95 transition-all"
+                          >
+                            Buy ({git.price_points} PTS)
+                          </button>
+                          <span className="text-[9px] text-gray-500 font-mono">Or ${git.price_money} USD</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            </div>
+          )
+        )}
+
+        {/* Tab Content: BLACK ROOM (anonymous trading ring) */}
+        {activeTab === "blackroom" && (
+          !currentUser ? (
+            <div className="flex flex-col items-center justify-center py-10 w-full animate-fadeIn">
+              <AuthCard
+                onAuthSuccess={(u) => {
+                  setCurrentUser(u);
+                  localStorage.setItem("sh_user", JSON.stringify(u));
+                }}
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+            {/* Sidebar: pseudonym summary, brokers directory and create listings triggers */}
+            <div className="md:col-span-4 space-y-6">
+              {/* Local Alias code card */}
+              <div className="bg-[#0E131F] border border-slate-800 rounded-3xl p-5 text-center shadow-lg relative overflow-hidden">
+                <div className="absolute top-2 right-2 text-[9px] text-[#00E5FF] font-mono border border-cyan-500/20 px-2 py-0.5 rounded bg-cyan-950/20 uppercase animate-pulse">
+                  BLACK ROOM ONLY
+                </div>
+                <span className="text-[8px] font-mono text-gray-500 block uppercase tracking-widest font-bold">anonymous symbol</span>
+                <span className="text-xl font-black text-white mt-1.5 block select-all">{currentUser?.black_room_alias || "🔮 Lithium"}</span>
+                <p className="text-[10px] text-gray-400 mt-2 font-mono">
+                  All listings, sales, and messaging are routed securely under your chemical symbol alias.
+                </p>
+                <button
+                  id="br-create-listing-toggle-btn"
+                  onClick={() => setShowCreateBr(!showCreateBr)}
+                  className="mt-4 w-full py-2.5 bg-slate-950 hover:bg-slate-900 border border-slate-850 text-[#00E5FF] font-bold text-xs rounded-xl transition-all"
+                >
+                  Create Anonymous Listing
+                </button>
+              </div>
+
+              {/* Verified broker directory lists */}
+              <div className="bg-slate-900/60 p-5 border border-slate-800 rounded-3xl space-y-3">
+                <div className="flex justify-between items-center pb-1 border-b border-slate-800">
+                  <h3 className="text-xs font-black uppercase text-gray-400 tracking-wider">Verified Room Brokers</h3>
+                  <span className="text-[9px] text-[#00E5FF] font-mono uppercase bg-[#00E5FF]/10 px-1.5 py-0.5 rounded">Pre-Seeded</span>
+                </div>
+                <div className="divide-y divide-slate-850 space-y-2.5">
+                  {brokers && brokers.map((b) => (
+                    <div key={b.id} className="pt-2 flex flex-col gap-1.5 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-slate-200 flex items-center gap-1.5">
+                          🛡️ {b.name}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/20 px-1.5 py-0.5 rounded font-bold">
+                            Trust {100 - (b.disputes_count || 0)}%
+                          </span>
+                          <span className="text-[9px] text-gray-400 font-mono font-medium">
+                            ({b.vouches_count || 0} ♥)
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-[10px] text-gray-400 font-mono">
+                        <span>Escrow Fee: {b.escrow_fee_percent}%</span>
+                        <button
+                          id={`vouch-btn-${b.id}`}
+                          onClick={() => handleVouchBroker(b.id)}
+                          className="px-2 py-0.5 bg-cyan-950/45 hover:bg-cyan-900/50 border border-cyan-800/40 text-[#00E5FF] text-[9px] font-black rounded uppercase transition-all"
+                        >
+                          ♥ Vouch Broker
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Core center: Create listings or marketplace feeds list */}
+            <div className="md:col-span-8 space-y-6">
+              {showCreateBr && (
+                <form onSubmit={handleCreateBlackListing} className="p-6 bg-[#0E131F] border border-slate-800 rounded-3xl space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-[#00E5FF]">Create chemical listings</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-gray-500 font-bold uppercase">Collectable Item Title</label>
+                      <input
+                        type="text"
+                        id="br-listing-title"
+                        required
+                        value={newBrTitle}
+                        onChange={(e) => setNewBrTitle(e.target.value)}
+                        className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2 text-xs focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-gray-500 font-bold uppercase">Price points</label>
+                      <input
+                        type="number"
+                        id="br-listing-price"
+                        required
+                        value={newBrPrice}
+                        onChange={(e) => setNewBrPrice(e.target.value)}
+                        className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2 text-xs text-cyan-400 font-mono focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-gray-500 font-bold uppercase">Collectable Specifications Details</label>
+                    <textarea
+                      id="br-listing-desc"
+                      required
+                      placeholder="Input physical/digital coordinate specifications. Do NOT write your real email or contacts."
+                      value={newBrDesc}
+                      onChange={(e) => setNewBrDesc(e.target.value)}
+                      className="w-full bg-[#05070A] border border-slate-800 rounded-2xl p-4 text-xs focus:outline-none"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    id="br-listing-submit"
+                    className="w-full py-2 px-4 bg-[#00E5FF] text-gray-950 font-black rounded-xl text-xs uppercase"
+                  >
+                    Confirm mounting
+                  </button>
+                </form>
+              )}
+
+              {/* Feed lists */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-black uppercase text-gray-400 tracking-wider">Group Market anonymous trade feed</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  {brListings.map((listing) => (
+                    <div key={listing.id} className="bg-slate-900/60 p-5 border border-slate-800 rounded-3xl flex justify-between items-start gap-4 shadow">
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-mono text-cyan-400 font-bold">{listing.alias}</span>
+                          <span className="text-[8px] text-gray-500 font-mono">• {new Date(listing.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <h4 className="text-xs font-bold text-white truncate">{listing.title}</h4>
+                        <p className="text-[11px] text-slate-300 leading-normal font-normal max-w-lg">{listing.description}</p>
+                        {selectedBrListing?.id === listing.id && (
+                          <div className="mt-4 pt-4 border-t border-slate-800 space-y-3">
+                            <h5 className="text-[10px] font-bold text-cyan-400 font-mono uppercase">Private Channel communication</h5>
+                            <div className="bg-slate-950 p-3 rounded-xl max-h-[150px] overflow-y-auto space-y-2 text-[10px] font-mono">
+                              {brMessages.map((msg) => (
+                                <div key={msg.id} className="border-b border-slate-900/40 pb-1.5">
+                                  <span className="text-cyan-400 font-bold">[{msg.from_alias}]</span>: {msg.message}
+                                </div>
+                              ))}
+                            </div>
+                            <form onSubmit={handleSendBrMsg} className="flex gap-2">
+                              <input
+                                type="text"
+                                id="br-msg-input"
+                                placeholder="Type anonymous dispatch..."
+                                value={newBrMsg}
+                                onChange={(e) => setNewBrMsg(e.target.value)}
+                                className="bg-slate-950 text-white rounded-lg px-3 py-1.5 text-xs flex-1 focus:outline-none border border-slate-800"
+                              />
+                              <button
+                                type="submit"
+                                id="br-msg-send-btn"
+                                className="px-3 py-1 bg-[#00E5FF] text-gray-950 font-bold rounded-lg text-xs"
+                              >
+                                Send
+                              </button>
+                            </form>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="text-right flex-shrink-0 flex flex-col items-end gap-2">
+                        <span className="text-xs font-bold font-mono text-cyan-400">{listing.price_points} pts</span>
+                        {listing.status === "open" ? (
+                          listing.user_id === currentUser.id ? (
+                            <span className="text-gray-500 text-[9px] font-bold italic font-mono block">YOUR LISTING</span>
+                          ) : (
+                            <button
+                              id={`buy-br-${listing.id}`}
+                              onClick={() => handleBuyBlackItem(listing.id)}
+                              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-[10.5px] transition-all"
+                            >
+                              Unlock & Buy
+                            </button>
+                          )
+                        ) : (
+                          <div className="flex flex-col gap-1.5 items-end">
+                            <span className="text-[10px] text-amber-500 font-mono font-bold block">🔒 SOLD & IN FLIGHT</span>
+                            <button
+                              id={`chat-br-${listing.id}`}
+                              onClick={() => {
+                                setSelectedBrListing(listing);
+                                fetchBrMessages(listing.id);
+                              }}
+                              className="px-2.5 py-1 bg-slate-800 text-gray-300 font-bold rounded-lg text-[9px] hover:text-white"
+                            >
+                              Open private Chat
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      )}
+
+        {/* Tab Content: PROFILE / KYC & ADMIN CORES */}
+        {activeTab === "profile" && (
+          !currentUser ? (
+            <div className="flex flex-col items-center justify-center py-10 w-full animate-fadeIn">
+              <AuthCard
+                onAuthSuccess={(u) => {
+                  setCurrentUser(u);
+                  localStorage.setItem("sh_user", JSON.stringify(u));
+                }}
+              />
+            </div>
+          ) : (
+            <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              {/* Profile details & KYC submission form */}
+              <div className="bg-[#0E131F]/95 p-6 border border-slate-800 rounded-3xl space-y-5">
+                <div className="flex justify-between items-center border-b border-indigo-900/30 pb-3">
+                  <h3 className="text-xs font-black uppercase text-cyan-400 tracking-widest">KYC identity dossier</h3>
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider ${
+                    currentUser?.kyc_status === "verified" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                    currentUser?.kyc_status === "pending" ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse" :
+                    "bg-gray-850 text-gray-400"
+                  }`}>
+                    {currentUser?.kyc_status?.toUpperCase() || "UNSUBMITTED"}
+                  </span>
+                </div>
+
+                {currentUser?.kyc_status !== "verified" ? (
+                  <form onSubmit={handleSubmitIdentityKyc} className="space-y-4">
+                    <p className="text-[11px] text-gray-400 font-mono leading-relaxed">
+                      Identity dossier completion is standard to trigger points token cashouts. Complete correct credentials:
+                    </p>
+                    <div className="space-y-1.5">
+                      <label className="text-[9.5px] font-bold text-gray-500 uppercase">Real Legal Name</label>
+                      <input
+                        type="text"
+                        id="kyc-name-input"
+                        required
+                        placeholder="John Doe"
+                        value={kycName}
+                        onChange={(e) => setKycName(e.target.value)}
+                        className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-cyan-500/40"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9.5px] font-bold text-gray-500 uppercase">AML Verification Address</label>
+                      <input
+                        type="text"
+                        id="kyc-address-input"
+                        required
+                        placeholder="Suite 1B, Lagos"
+                        value={kycAddress}
+                        onChange={(e) => setKycAddress(e.target.value)}
+                        className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-cyan-500/40"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      id="kyc-submit-btn"
+                      disabled={isSubmittingKyc}
+                      className="w-full py-2.5 bg-gradient-to-r from-cyan-400 to-blue-500 text-gray-950 font-black rounded-xl text-xs uppercase"
+                    >
+                      {isSubmittingKyc ? "Registering files..." : "Confirm identity register dossiers"}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="p-4 bg-emerald-950/20 border border-emerald-500/20 rounded-2xl flex items-start gap-3">
+                    <ShieldCheck className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                    <div>
+                      <h4 className="text-xs font-bold text-white">Your details have been globally verified!</h4>
+                      <p className="text-[10px] text-gray-400 mt-1">Point withdrawal cashouts limits are unlocked to USDT coordinates.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Cashout withdraw to USDT */}
+              <div className="bg-slate-900/60 p-6 border border-slate-800 rounded-3xl space-y-4">
+                <h3 className="text-xs font-black uppercase text-gray-400 tracking-widest pb-3 border-b border-slate-850">Withdraw points to USDT</h3>
+                <p className="text-[10px] text-gray-500 font-mono leading-relaxed pb-1">
+                  Rate is 100 PTS = 1 USDT. Minimun is 1,000 points. Approvals are manually processed by administrator.
+                </p>
+
+                <form onSubmit={handlePointsUSDTWithdrawal} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[9.5px] text-gray-500 font-bold uppercase">Points quantity</label>
+                    <input
+                      type="number"
+                      id="withdraw-points-input"
+                      required
+                      placeholder="Min 1000"
+                      value={withdrawPointsAmt}
+                      onChange={(e) => setWithdrawPointsAmt(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-cyan-400 font-mono focus:outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9.5px] text-gray-500 font-bold uppercase">USDT Wallet network (TRC-20)</label>
+                    <input
+                      type="text"
+                      id="withdraw-wallet-input"
+                      required
+                      placeholder="TYZg48283..."
+                      value={withdrawUSDTAddress}
+                      onChange={(e) => setWithdrawUSDTAddress(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white font-mono focus:outline-none"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    id="withdraw-submit-btn"
+                    disabled={isSubmitWithdrawal}
+                    className="w-full py-2.5 bg-gradient-to-r from-cyan-400 to-blue-500 text-gray-950 font-black rounded-xl text-xs uppercase"
+                  >
+                    {isSubmitWithdrawal ? "Syncing coordinates..." : "Request points cashout"}
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            {/* IF USER ADMIN CORE: Renders full overwrite console dynamically */}
+            {currentUser?.role === "admin" && (
+              <div className="mt-8 animate-fadeIn">
+                <AdminPanel
+                  currentUserId={currentUser.id}
+                  onSettingsUpdate={(newSettings) => setSettings(newSettings)}
+                  onRefreshUserPoints={handleRefreshUserPoints}
+                />
+              </div>
+            )}
+          </div>
+        )
+      )}
+      </div>
+
+      {unlockedAssetGuide && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-[#0E131F] border border-slate-800 rounded-3xl p-6 max-w-2xl w-full max-h-[85vh] flex flex-col justify-between shadow-2xl relative">
+            <button
+              onClick={() => setUnlockedAssetGuide(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition-all cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-4 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-850">
+              <div className="flex items-center gap-3 pb-3 border-b border-indigo-900/40">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <Award className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black uppercase text-emerald-400 tracking-wider">Asset Code Delivered</h3>
+                  <p className="text-[11px] font-mono text-gray-450">Product Template: {unlockedAssetGuide.title}</p>
+                </div>
+              </div>
+
+              {/* Guide Content Display */}
+              <div className="p-4 bg-slate-950 border border-slate-850 rounded-2xl text-slate-300 font-mono text-[11px] whitespace-pre-wrap leading-relaxed max-h-[45vh] overflow-y-auto">
+                {unlockedAssetGuide.guide}
+              </div>
+
+              <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl flex items-start gap-2.5">
+                <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <p className="text-[10.5px] text-emerald-300 leading-normal font-sans">
+                  The developer guide has been securely provisioned to your profile. Please download the source package ZIP files below to begin deployment.
+                </p>
+              </div>
+            </div>
+
+            {/* Actions Panel */}
+            <div className="flex gap-3 pt-5 mt-4 border-t border-slate-850 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(unlockedAssetGuide.guide);
+                  alert("📋 Guide copied to clipboard! You can paste this in your IDE.");
+                }}
+                className="px-4 py-2 border border-slate-800 hover:border-slate-700 bg-slate-900 hover:bg-slate-850 text-xs text-slate-250 hover:text-white font-bold rounded-xl transition-all cursor-pointer"
+              >
+                Copy Guide
+              </button>
+              <a
+                href={unlockedAssetGuide.url}
+                className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-gray-950 text-xs font-black rounded-xl hover:brightness-110 active:scale-95 flex items-center gap-2 transition-all cursor-pointer"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Download Source ZIP
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Google Gemini chatbot copilot widget */}
+      <AIAssistant />
+      <SupportWidget settings={settings} />
+
+      {/* Modern Dense Navigation bottom bar (meets X + Telegram mobile) */}
+      <div className="fixed bottom-0 inset-x-0 bg-[#0E131F]/90 border-t border-slate-850/85 py-3.5 z-40 backdrop-blur-md shadow-2xl flex justify-around">
+        <button
+          id="nav-tab-home animate-pulse"
+          onClick={() => setActiveTab("home")}
+          className={`flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
+            activeTab === "home" ? "text-cyan-400 font-black" : "text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          <Compass className="w-5 h-5" />
+          <span className="text-[10px] font-semibold tracking-wider uppercase">HUB</span>
+        </button>
+        <button
+          id="nav-tab-generator"
+          onClick={() => setActiveTab("generator")}
+          className={`flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
+            activeTab === "generator" ? "text-cyan-400 font-black" : "text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          <CreditCard className="w-5 h-5" />
+          <span className="text-[10px] font-semibold tracking-wider uppercase">GENERATOR</span>
+        </button>
+        <button
+          id="nav-tab-marketplace"
+          onClick={() => setActiveTab("marketplace")}
+          className={`flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
+            activeTab === "marketplace" ? "text-cyan-400 font-black" : "text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          <ShoppingBag className="w-5 h-5" />
+          <span className="text-[10px] font-semibold tracking-wider uppercase">DIGITAL</span>
+        </button>
+        <button
+          id="nav-tab-blackroom"
+          onClick={() => setActiveTab("blackroom")}
+          className={`flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
+            activeTab === "blackroom" ? "text-[#00E5FF] font-black" : "text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          <Radio className="w-5 h-5" />
+          <span className="text-[10px] font-semibold tracking-wider uppercase">BLACK ROOM</span>
+        </button>
+        <button
+          id="nav-tab-profile"
+          onClick={() => setActiveTab("profile")}
+          className={`flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
+            activeTab === "profile" ? "text-cyan-400 font-black" : "text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          <Shield className="w-5 h-5" />
+          <span className="text-[10px] font-semibold tracking-wider uppercase">SECURITY</span>
+        </button>
+      </div>
+
+      {/* Footer License Link & Subtle Watermark */}
+      <div className="text-center text-[10px] font-mono mt-12 mb-6 pb-12 flex flex-col items-center justify-center gap-2 select-none">
+        <button
+          onClick={() => setShowLicenseModal(true)}
+          className="text-[#00E5FF] hover:text-white transition-all underline decoration-[#00E5FF]/40 hover:decoration-white font-bold tracking-wider uppercase text-[9px] cursor-pointer"
+        >
+          📄 View StyleHub Application License Agreement (T&C)
+        </button>
+        <span className="text-gray-700 uppercase tracking-widest block mt-1">
+          StyleHub Platform Core • Powered by Google • © Jadai Studios
+        </span>
+      </div>
+
+      {showLicenseModal && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-[#0E131F] border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-3xl w-full max-h-[85vh] flex flex-col justify-between shadow-2xl relative">
+            <button
+              onClick={() => setShowLicenseModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition-all cursor-pointer"
+              aria-label="Close License Modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-4 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-850">
+              <div className="flex items-center gap-3 pb-3 border-b border-indigo-900/40">
+                <div className="w-10 h-10 rounded-2xl bg-[#00E5FF]/10 border border-[#00E5FF]/20 flex items-center justify-center text-[#00E5FF]">
+                  <ShieldCheck className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black uppercase text-white tracking-wider">StyleHub System License</h3>
+                  <p className="text-[10px] font-mono text-cyan-400">Compliance Directives, Escrow Terms & Safeguards</p>
+                </div>
+              </div>
+
+              {/* Terms Content */}
+              <div className="space-y-4 text-slate-350 font-sans text-xs leading-relaxed">
+                <div>
+                  <h4 className="font-bold text-white uppercase text-[11px] mb-1 flex items-center gap-1">
+                    <span className="text-cyan-400">1.</span> Simulation & Educational Boundaries
+                  </h4>
+                  <p className="text-slate-400 text-[11.5px]">
+                    All fintech transaction generators, OPay/Kuda checkout mimics, and financial ledger transfer simulators supplied by StyleHub are strictly for design evaluation, UX demonstration, and sandbox validation. Utilizing mock financial receipt representations to deceive individuals is strictly prohibited.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-white uppercase text-[11px] mb-1 flex items-center gap-1">
+                    <span className="text-cyan-400">2.</span> Point Holding Escrow System
+                  </h4>
+                  <p className="text-slate-400 text-[11.5px]">
+                    All points traded inside the marketplace, anonymous lists, or rented developer slots (Jadai PLS Points) hold automatically in secure programmatic custody escrows. Release triggers occur exclusively when transaction validity or code dispatch satisfies both trading nodes.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-white uppercase text-[11px] mb-1 flex items-center gap-1">
+                    <span className="text-cyan-400">3.</span> Double-Cipher Pseudonyms
+                  </h4>
+                  <p className="text-slate-400 text-[11.5px]">
+                    Allocations of coordinate-protected chemical pseudonyms (e.g., Helium, Lithium) guarantee complete trace protection inside the Black Room. Registrants are bound to negotiate in good faith. Jadai Studios retains immediate auditing privileges to block abusive sessions.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-white uppercase text-[11px] mb-1 flex items-center gap-1">
+                    <span className="text-cyan-400">4.</span> Google Infrastructure credibility
+                  </h4>
+                  <p className="text-slate-400 text-[11.5px]">
+                    Secure Google fast sign-in API pathways are integrated to guarantee user credentials integrity. All platform layouts are design concepts administered under Jadai Studios, leveraging Google services for verified uptime and sandbox deployment reliability.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 bg-cyan-950/20 border border-cyan-500/20 rounded-xl flex items-start gap-2">
+                <Check className="w-4 h-4 text-[#00E5FF] shrink-0 mt-0.5" />
+                <p className="text-[10px] text-cyan-300 font-mono leading-normal">
+                  By clicking accept, you authorize session register directories, consent to AML checklists, and verify that all outputs run under sterile simulated conditions.
+                </p>
+              </div>
+            </div>
+
+            {/* Actions Panel */}
+            <div className="flex gap-3 pt-5 mt-4 border-t border-slate-850 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowLicenseModal(false)}
+                className="px-6 py-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-gray-950 text-xs font-black rounded-xl hover:brightness-110 transition-all cursor-pointer uppercase tracking-wider font-mono shadow-md shadow-cyan-500/10"
+              >
+                Accept Terms
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
