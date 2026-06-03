@@ -19,6 +19,7 @@ const pseudonyms = [
 
 // Helper to load or initialize DB
 function getDB() {
+  let db: any;
   if (!fs.existsSync(DB_FILE)) {
     const initialDB = {
       users: [
@@ -27,7 +28,7 @@ function getDB() {
           email: "admin@stylehub.com",
           password: "Admin@123456",
           role: "admin",
-          points: 10000,
+          points: 1000000, // Pre-seeded with 1,000,000 points
           referral_code: "ADMINSH",
           kyc_status: "verified",
           black_room_alias: "👑 Gold",
@@ -39,7 +40,7 @@ function getDB() {
           email: "user@stylehub.com",
           password: "User@123456",
           role: "user",
-          points: 150,
+          points: 1500, // Seeded with points to allow broker purchase test
           referral_code: "USERSTYLE",
           referred_by: "ADMINSH",
           kyc_status: "verified",
@@ -140,12 +141,305 @@ function getDB() {
         telegram_url: "https://t.me/jadaistudios",
         support_email: "support@stylehub.net",
         ai_script: "You are Jarvis, the friendly AI platform Assistant for StyleHub. StyleHub is a fintech & digital marketplace created and operated by Jadai Studios. Keep answers crisp and refer users to the various tabs (the Digital Goods Marketplace, Black Room anonymous trades, or Custom Receipt Simulator)."
-      }
+      },
+      crypto_brokers: [
+        {
+          id: "cbroker-1",
+          name: "Ares Algo Arbitrage",
+          alias: "⚡ Ares Algo",
+          description: "High-frequency triangular arbitrage trading pool scanning 15+ decentralized exchanges. Safely captures swift micro-price discrepancies in BTC, ETH, and SOL pairs with mathematical precision.",
+          price_points: 150,
+          risk_level: "Low",
+          projected_apy: 45,
+          minimum_investment_points: 10,
+          is_active: true,
+          detailed_readme: "### Ares Algo Arbitrage Protocol\n- **Strategy**: Cross-DEX Triangular Arbitrage.\n- **Risk Protocol**: Absolute neutral hedging. Runs zero direction directional exposure.\n- **Liquidity Lock**: Locked in smart multi-sig custody vaults.\n- **Target Yield**: Stable 35% - 55% APY based on volatility coefficients.\n- **Sovereign Admin Parameters**: Admin controls yield variables directly via System Admin Control HUD.",
+          mock_trades: [
+            { id: "t1", ticker: "BTC/USDT", amount: 1540, profit: 4.5, time: "Just now" },
+            { id: "t2", ticker: "ETH/USDT", amount: 820, profit: -1.2, time: "2 mins ago" },
+            { id: "t3", ticker: "SOL/USD", amount: 310, profit: 12.8, time: "5 mins ago" }
+          ]
+        },
+        {
+          id: "cbroker-2",
+          name: "Zephyr Liquidity Fund",
+          alias: "🔮 Zephyr Yield",
+          description: "Automated layer-1 proof-of-stake node operator and concentrated liquidity pool manager. Strategically supplies deep capital to Uniswap V3 tight ranges for amplified fee shares.",
+          price_points: 250,
+          risk_level: "Medium",
+          projected_apy: 78,
+          minimum_investment_points: 25,
+          is_active: true,
+          detailed_readme: "### Zephyr Concentrated Liquidity Fund\n- **Strategy**: Active Concentrated Fee Optimization.\n- **Rebalancing**: Programmatic adjusting of price ranges twice daily.\n- **Underlying Assets**: Stablecoin pairings (USDC/USDT), core majors (WBTC, WETH).\n- **Target Yield**: Target APY range 65% - 90% in low-to-medium risk profiles.",
+          mock_trades: [
+            { id: "t4", ticker: "USDC/USDT", amount: 5040, profit: 0.8, time: "Just now" },
+            { id: "t5", ticker: "ETH/USDT", amount: 2400, profit: 15.4, time: "1 min ago" },
+            { id: "t6", ticker: "LINK/ETH", amount: 1250, profit: -2.3, time: "8 mins ago" }
+          ]
+        },
+        {
+          id: "cbroker-3",
+          name: "Titan Leverage System",
+          alias: "🔱 Titan Leverage",
+          description: "High-leverage altcoin momentum trading node. Scans coin velocities and breakouts, executing multi-leverage longs or shorts with custom automated stop-loss thresholds.",
+          price_points: 400,
+          risk_level: "High",
+          projected_apy: 125,
+          minimum_investment_points: 50,
+          is_active: true,
+          detailed_readme: "### Titan Leveraged Altcoins System\n- **Strategy**: Leveraged Momentum Breakout Scalping.\n- **Margin Assets**: High volatility majors and selection altcoins.\n- **Protection Suite**: Programmatic target hard-stops at -5% and trailing take-profits.\n- **Target Yield**: Dynamic yield cycles up to 150% based on active trends.",
+          mock_trades: [
+            { id: "t7", ticker: "SOL/USDT (10x Long)", amount: 500, profit: 45.0, time: "Just now" },
+            { id: "t8", ticker: "DOGE/USDT (5x Short)", amount: 1200, profit: -18.2, time: "3 mins ago" },
+            { id: "t9", ticker: "AVAX/USDT (10x Long)", amount: 650, profit: 89.4, time: "11 mins ago" }
+          ]
+        },
+        {
+          id: "cbroker-4",
+          name: "Apollo DeFi Smart Crops",
+          alias: "☀️ Apollo Farms",
+          description: "Decentralized automated compounder crawling high-yield swap routers and borrowing vaults. Employs advanced flash-loaning to lock yield ratios and minimize impermanent loss.",
+          price_points: 600,
+          risk_level: "Very High",
+          projected_apy: 180,
+          minimum_investment_points: 100,
+          is_active: true,
+          detailed_readme: "### Apollo DeFi Smart Farms\n- **Strategy**: Multi-Chain Yield Farming and Flash Loan Compounding.\n- **Asset Crawlers**: Ethereum, Arbitrum, Optimism liquidity layers.\n- **Hedging Protocol**: Self-liquidating collateral debt ratios.\n- **Target Yield**: Hyper-compounded APY range 140% - 220%. Allow auto-reinvestment.",
+          mock_trades: [
+            { id: "t10", ticker: "AAVE/GHO-Farm", amount: 2500, profit: 124.9, time: "Just now" },
+            { id: "t11", ticker: "CRV/cvxCRV-LP", amount: 4800, profit: -8.5, time: "12 mins ago" },
+            { id: "t12", ticker: "UNI/V3-Fees", amount: 1900, profit: 64.2, time: "30 mins ago" }
+          ]
+        },
+        {
+          id: "cbroker-5",
+          name: "Chronos Scalping Sentinel",
+          alias: "☄️ Chronos Scalp AI",
+          description: "AI-trained predictive model capturing microsecond trend differentials. Trades high frequency order flows and sentiment shifts on extreme volatility tokens.",
+          price_points: 900,
+          risk_level: "Extreme",
+          projected_apy: 240,
+          minimum_investment_points: 200,
+          is_active: true,
+          detailed_readme: "### Chronos AI Predictive Systems\n- **Strategy**: Artificial Neural Network Micro-Scalping.\n- **Feed Integrity**: Realtime orderbook deep-level analytics and social sentiment indexing.\n- **Risk Factor**: Extreme high-speed delta-risk; highly sensitive to market shocks.\n- **Target Yield**: Maximum speculative performance up to 300% APY.",
+          mock_trades: [
+            { id: "t13", ticker: "PEPE/USDT", amount: 95000, profit: 785.4, time: "Just now" },
+            { id: "t14", ticker: "WIF/USDT", amount: 42000, profit: -312.2, time: "4 mins ago" },
+            { id: "t15", ticker: "BONK/USDT", amount: 135000, profit: 942.5, time: "18 mins ago" }
+          ]
+        }
+      ],
+      user_unlocked_brokers: [],
+      user_investments: []
     };
     fs.writeFileSync(DB_FILE, JSON.stringify(initialDB, null, 2));
-    return initialDB;
+    db = initialDB;
+  } else {
+    db = JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
   }
-  return JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
+
+  // Schema Hot Patches (Ensure compatibility if DB file already exists)
+  let updated = false;
+
+  // Set default admin-123's points to exactly 1,000,000 for user requirements
+  const adminUser = db.users?.find((u: any) => u.email === "admin@stylehub.com");
+  if (adminUser) {
+    if (adminUser.points < 1000000) {
+      adminUser.points = 1000000;
+      updated = true;
+    }
+    if (!adminUser.subscription_tier) {
+      adminUser.subscription_tier = "elite";
+      updated = true;
+    }
+  }
+
+  // Set default user-456's points and subscription_tier
+  const demoUser = db.users?.find((u: any) => u.email === "user@stylehub.com");
+  if (demoUser) {
+    if (!demoUser.subscription_tier) {
+      demoUser.subscription_tier = "professional";
+      updated = true;
+    }
+  }
+
+  // Hotpatch system receipt price points to 150 as requested
+  if (db.system_settings) {
+    if (db.system_settings.receipt_price_points !== 150) {
+      db.system_settings.receipt_price_points = 150;
+      updated = true;
+    }
+  }
+
+  // Add templates database list if it does not exist
+  if (!db.templates) {
+    db.templates = [
+      {
+        id: "tmpl-gold-signia",
+        name: "Signia Premium Gold Voucher",
+        category: "voucher",
+        html_content: `
+          <div style="background: linear-gradient(135deg, #0d0e12 0%, #15161d 100%); color: #fff; padding: 25px; border-radius: 16px; border: 1px solid #D4AF37; font-family: monospace; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); text-shadow: 0 1px 1px #000;">
+            <div style="text-align: center; border-bottom: 1px dashed rgba(212, 175, 55, 0.3); padding-bottom: 12px; margin-bottom: 20px;">
+              <h2 style="color: #D4AF37; margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 2px;">GOLD SIGNIA</h2>
+              <p style="font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.6; margin: 4px 0 0 0;">Secure Premium Asset Voucher</p>
+            </div>
+            <div style="font-size: 11px; line-height: 2;">
+              <div style="display: flex; justify-content: space-between;"><strong style="color: #D4AF37;">SENDER:</strong> <span>{{SENDER_NAME}}</span></div>
+              <div style="display: flex; justify-content: space-between;"><strong style="color: #D4AF37;">RECIPIENT:</strong> <span>{{RECEIVER_NAME}}</span></div>
+              <div style="display: flex; justify-content: space-between;"><strong style="color: #D4AF37;">DESTINATION:</strong> <span>{{RECEIVER_BANK}}</span></div>
+              <div style="display: flex; justify-content: space-between;"><strong style="color: #D4AF37;">REFERENCE:</strong> <span style="font-style: italic;">{{REFERENCE}}</span></div>
+              <div style="display: flex; justify-content: space-between;"><strong style="color: #D4AF37;">STAMP REF:</strong> <span style="font-family: serif;">{{TRANSACTION_ID}}</span></div>
+            </div>
+            <div style="margin-top: 25px; background: rgba(212, 175, 55, 0.1); border: 1px solid #D4AF37; padding: 12px; border-radius: 10px; text-align: center;">
+              <span style="display: block; font-size: 9px; color: #D4AF37; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">LEDGER DEBIT CONFIRMED</span>
+              <span style="font-size: 22px; font-weight: 900; display: block; margin-top: 4px; color: #fff;">₦{{AMOUNT}}</span>
+            </div>
+            <div style="text-align: center; margin-top: 20px; font-size: 8px; opacity: 0.4;">
+              POWERED BY SIGNIA SECURITY PROTOCOLS • JADAI LABS
+            </div>
+          </div>
+        `,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: "tmpl-emerald-receipt",
+        name: "Emerald Sovereign Cash Stamp",
+        category: "invoice",
+        html_content: `
+          <div style="background: #ffffff; color: #1e293b; padding: 30px; border-radius: 20px; border: 3px solid #10B981; font-family: sans-serif; max-width: 400px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+              <div>
+                <h3 style="color: #10B981; margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.5px;">EMERALD SOVEREIGN</h3>
+                <span style="font-size: 9px; color: #64748b; font-weight: 600;">INSTANT CREDIT ADVICE</span>
+              </div>
+              <div style="background: #10B981; color: #fff; font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 9999px; letter-spacing: 0.5px;">SETTLED</div>
+            </div>
+            <div style="text-align: center; margin: 25px 0;">
+              <span style="font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px;">APPROVED VALUE</span>
+              <h1 style="font-size: 32px; font-weight: 900; color: #0f172a; margin: 5px 0 0 0; letter-spacing: -1px;">₦{{AMOUNT}}</h1>
+            </div>
+            <div style="border-top: 1px solid #f1f5f9; padding-top: 15px; font-size: 12px; display: grid; gap: 10px;">
+              <div style="display: flex; justify-content: space-between;"><span style="color: #64748b; font-weight: 500;">Payer:</span><strong style="color: #0f172a;">{{SENDER_NAME}}</strong></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: #64748b; font-weight: 500;">Beneficiary:</span><strong style="color: #0f172a;">{{RECEIVER_NAME}}</strong></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: #64748b; font-weight: 500;">Bank Target:</span><strong style="color: #0f172a;">{{RECEIVER_BANK}}</strong></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: #64748b; font-weight: 500;">Ledger Memo:</span><strong style="color: #64748b; font-weight: normal; font-style: italic;">{{REFERENCE}}</strong></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: #64748b; font-weight: 500;">Audit Pin:</span><strong style="color: #0f172a; font-family: monospace;">{{TRANSACTION_ID}}</strong></div>
+            </div>
+            <div style="text-align: center; margin-top: 30px; font-size: 9px; color: #94a3b8; font-weight: 500; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+              Thank you for secure escrow routing.
+            </div>
+          </div>
+        `,
+        created_at: new Date().toISOString()
+      }
+    ];
+    updated = true;
+  }
+
+  if (!db.crypto_brokers) {
+    db.crypto_brokers = [
+      {
+        id: "cbroker-1",
+        name: "Ares Algo Arbitrage",
+        alias: "⚡ Ares Algo",
+        description: "High-frequency triangular arbitrage trading pool scanning 15+ decentralized exchanges. Safely captures swift micro-price discrepancies in BTC, ETH, and SOL pairs with mathematical precision.",
+        price_points: 150,
+        risk_level: "Low",
+        projected_apy: 45,
+        minimum_investment_points: 10,
+        is_active: true,
+        detailed_readme: "### Ares Algo Arbitrage Protocol\n- **Strategy**: Cross-DEX Triangular Arbitrage.\n- **Risk Protocol**: Absolute neutral hedging. Runs zero direction directional exposure.\n- **Liquidity Lock**: Locked in smart multi-sig custody vaults.\n- **Target Yield**: Stable 35% - 55% APY based on volatility coefficients.\n- **Sovereign Admin Parameters**: Admin controls yield variables directly via System Admin Control HUD.",
+        mock_trades: [
+          { id: "t1", ticker: "BTC/USDT", amount: 1540, profit: 4.5, time: "Just now" },
+          { id: "t2", ticker: "ETH/USDT", amount: 820, profit: -1.2, time: "2 mins ago" },
+          { id: "t3", ticker: "SOL/USD", amount: 310, profit: 12.8, time: "5 mins ago" }
+        ]
+      },
+      {
+        id: "cbroker-2",
+        name: "Zephyr Liquidity Fund",
+        alias: "🔮 Zephyr Yield",
+        description: "Automated layer-1 proof-of-stake node operator and concentrated liquidity pool manager. Strategically supplies deep capital to Uniswap V3 tight ranges for amplified fee shares.",
+        price_points: 250,
+        risk_level: "Medium",
+        projected_apy: 78,
+        minimum_investment_points: 25,
+        is_active: true,
+        detailed_readme: "### Zephyr Concentrated Liquidity Fund\n- **Strategy**: Active Concentrated Fee Optimization.\n- **Rebalancing**: Programmatic adjusting of price ranges twice daily.\n- **Underlying Assets**: Stablecoin pairings (USDC/USDT), core majors (WBTC, WETH).\n- **Target Yield**: Target APY range 65% - 90% in low-to-medium risk profiles.",
+        mock_trades: [
+          { id: "t4", ticker: "USDC/USDT", amount: 5040, profit: 0.8, time: "Just now" },
+          { id: "t5", ticker: "ETH/USDT", amount: 2400, profit: 15.4, time: "1 min ago" },
+          { id: "t6", ticker: "LINK/ETH", amount: 1250, profit: -2.3, time: "8 mins ago" }
+        ]
+      },
+      {
+        id: "cbroker-3",
+        name: "Titan Leverage System",
+        alias: "🔱 Titan Leverage",
+        description: "High-leverage altcoin momentum trading node. Scans coin velocities and breakouts, executing multi-leverage longs or shorts with custom automated stop-loss thresholds.",
+        price_points: 400,
+        risk_level: "High",
+        projected_apy: 125,
+        minimum_investment_points: 50,
+        is_active: true,
+        detailed_readme: "### Titan Leveraged Altcoins System\n- **Strategy**: Leveraged Momentum Breakout Scalping.\n- **Margin Assets**: High volatility majors and selection altcoins.\n- **Protection Suite**: Programmatic target hard-stops at -5% and trailing take-profits.\n- **Target Yield**: Dynamic yield cycles up to 150% based on active trends.",
+        mock_trades: [
+          { id: "t7", ticker: "SOL/USDT (10x Long)", amount: 500, profit: 45.0, time: "Just now" },
+          { id: "t8", ticker: "DOGE/USDT (5x Short)", amount: 1200, profit: -18.2, time: "3 mins ago" },
+          { id: "t9", ticker: "AVAX/USDT (10x Long)", amount: 650, profit: 89.4, time: "11 mins ago" }
+        ]
+      },
+      {
+        id: "cbroker-4",
+        name: "Apollo DeFi Smart Crops",
+        alias: "☀️ Apollo Farms",
+        description: "Decentralized automated compounder crawling high-yield swap routers and borrowing vaults. Employs advanced flash-loaning to lock yield ratios and minimize impermanent loss.",
+        price_points: 600,
+        risk_level: "Very High",
+        projected_apy: 180,
+        minimum_investment_points: 100,
+        is_active: true,
+        detailed_readme: "### Apollo DeFi Smart Farms\n- **Strategy**: Multi-Chain Yield Farming and Flash Loan Compounding.\n- **Asset Crawlers**: Ethereum, Arbitrum, Optimism liquidity layers.\n- **Hedging Protocol**: Self-liquidating collateral debt ratios.\n- **Target Yield**: Hyper-compounded APY range 140% - 220%. Allow auto-reinvestment.",
+        mock_trades: [
+          { id: "t10", ticker: "AAVE/GHO-Farm", amount: 2500, profit: 124.9, time: "Just now" },
+          { id: "t11", ticker: "CRV/cvxCRV-LP", amount: 4800, profit: -8.5, time: "12 mins ago" },
+          { id: "t12", ticker: "UNI/V3-Fees", amount: 1900, profit: 64.2, time: "30 mins ago" }
+        ]
+      },
+      {
+        id: "cbroker-5",
+        name: "Chronos Scalping Sentinel",
+        alias: "☄️ Chronos Scalp AI",
+        description: "AI-trained predictive model capturing microsecond trend differentials. Trades high frequency order flows and sentiment shifts on extreme volatility tokens.",
+        price_points: 900,
+        risk_level: "Extreme",
+        projected_apy: 240,
+        minimum_investment_points: 200,
+        is_active: true,
+        detailed_readme: "### Chronos AI Predictive Systems\n- **Strategy**: Artificial Neural Network Micro-Scalping.\n- **Feed Integrity**: Realtime orderbook deep-level analytics and social sentiment indexing.\n- **Risk Factor**: Extreme high-speed delta-risk; highly sensitive to market shocks.\n- **Target Yield**: Maximum speculative performance up to 300% APY.",
+        mock_trades: [
+          { id: "t13", ticker: "PEPE/USDT", amount: 95000, profit: 785.4, time: "Just now" },
+          { id: "t14", ticker: "WIF/USDT", amount: 42000, profit: -312.2, time: "4 mins ago" },
+          { id: "t15", ticker: "BONK/USDT", amount: 135000, profit: 942.5, time: "18 mins ago" }
+        ]
+      }
+    ];
+    updated = true;
+  }
+  if (!db.user_unlocked_brokers) {
+    db.user_unlocked_brokers = [];
+    updated = true;
+  }
+  if (!db.user_investments) {
+    db.user_investments = [];
+    updated = true;
+  }
+
+  if (updated) {
+    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+  }
+  return db;
 }
 
 function writeDB(data: any) {
@@ -251,7 +545,17 @@ app.post("/api/auth/login", (req, res) => {
   if (!user) {
     return res.status(401).json({ error: "Invalid email or password" });
   }
-  res.json({ success: true, user: { id: user.id, email: user.email, role: user.role, points: user.points, black_room_alias: user.black_room_alias, trust_score: user.trust_score, kyc_status: user.kyc_status, referral_code: user.referral_code } });
+  res.json({ success: true, user });
+});
+
+// 2B. Session Refresh Me
+app.post("/api/auth/me", (req, res) => {
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing identity reference" });
+  const db = getDB();
+  const user = db.users.find((u: any) => u.id === userId);
+  if (!user) return res.status(404).json({ error: "User session expired or invalid" });
+  res.json({ success: true, user });
 });
 
 // Google login simulation
@@ -314,14 +618,56 @@ app.post("/api/profile/kyc", (req, res) => {
   res.json({ success: true, user });
 });
 
-// Paystack packages Sim
+// Paystack packages Sim with tier subscriptions from $4 to $30
 app.get("/api/points/packages", (req, res) => {
   res.json([
-    { id: "pkg1", name: "Lite Starter Kit", usd: 5, points: 50 },
-    { id: "pkg2", name: "Popular Stack", usd: 10, points: 110 },
-    { id: "pkg3", name: "Power Trader Pack", usd: 25, points: 280 },
-    { id: "pkg4", name: "VIP Ledger Bulk", usd: 50, points: 600 }
+    { id: "pkg1", name: "Basic Core License", usd: 4, points: 400, tier: "basic", features: "unlocked receipts generator" },
+    { id: "pkg2", name: "Professional Level License", usd: 10, points: 1200, tier: "professional", features: "+ autonomous core brokers" },
+    { id: "pkg3", name: "Business Sovereign License", usd: 20, points: 2600, tier: "executive", features: "+ full escrow trading, blackroom access" },
+    { id: "pkg4", name: "Elite Custom Ledger License", usd: 30, points: 4500, tier: "elite", features: "+ sovereign manual html templates upload (Signia)" }
   ]);
+});
+
+// Custom HTML Template list endpoint
+app.get("/api/templates/list", (req, res) => {
+  const db = getDB();
+  res.json(db.templates || []);
+});
+
+// Custom HTML Template upload endpoint
+app.post("/api/templates/upload", (req, res) => {
+  const { userId, name, category, htmlContent } = req.body;
+  if (!userId || !name || !htmlContent) {
+    return res.status(400).json({ error: "Missing required upload parameters (userId, name, htmlContent)" });
+  }
+
+  const db = getDB();
+  const user = db.users.find((u: any) => u.id === userId);
+  if (!user) return res.status(404).json({ error: "User profile not found." });
+
+  // Sovereign feature check: Custom Signia uploads are reserved for Premium members (Executive and Elite Tiers)
+  const userTier = user.subscription_tier || "basic";
+  if (userTier !== "executive" && userTier !== "elite" && user.role !== "admin") {
+    return res.status(403).json({ 
+      error: "Subscription Blocked: Standard HTML template uploads ('Signia files') require Executive Sovereign ($20) or Elite Custom Ledger ($30) subscriptions. Please top-up on Paystack to upgrade!" 
+    });
+  }
+
+  const newTemplate = {
+    id: "tmpl-" + Date.now(),
+    name,
+    category: category || "custom",
+    html_content: htmlContent,
+    uploaded_by: { id: user.id, email: user.email },
+    created_at: new Date().toISOString()
+  };
+
+  if (!db.templates) db.templates = [];
+  db.templates.unshift(newTemplate);
+  writeDB(db);
+
+  addLog(user.id, user.email, "TEMPLATE_UPLOAD", `Uploaded custom html template '${name}'.`);
+  res.json({ success: true, template: newTemplate });
 });
 
 // Submitting a withdrawal request
@@ -333,19 +679,40 @@ app.post("/api/points/withdraw", (req, res) => {
   const user = db.users.find((u: any) => u.id === userId);
   if (!user) return res.status(440).json({ error: "Session authentication error" });
 
+  // 1. MUST clear KYC identity register dossiers
   if (user.kyc_status !== "verified") {
-    return res.status(403).json({ error: "Verification required: You must submit KYC and be approved before withdrawing points." });
+    return res.status(403).json({ error: "🔒 Identity Unverified: You must complete and clear KYC verification first in the Security tab before cashing out." });
   }
 
+  // 2. MUST have made subscription with real cash
+  const hasPromoOnly = !user.subscription_tier || user.subscription_tier === null;
+  if (hasPromoOnly) {
+    return res.status(403).json({ error: "🚫 Depositor Limitation: Spot withdrawals are restricted strictly to active license subscribers. Please buy a real-cash subscription package on the Home/Hub tab first to authorize cashouts." });
+  }
+
+  // 3. Minimum points target limit
   if (amountPoints < 1000) {
-    return res.status(400).json({ error: "Minimum withdrawal is 1000 points (10 USDT)." });
+    return res.status(400).json({ error: "Minimum withdrawal threshold is 1000 points ($4.00 USDT cashout equivalent under high penalty conversion)." });
+  }
+
+  // 4. Any bonus or referral commissions is only for in-app services - limit to actual purchased_points
+  const userPurchasedPts = user.purchased_points || 0;
+  if (parseInt(amountPoints) > userPurchasedPts) {
+    return res.status(400).json({ 
+      error: `🚫 Gated Promotional Bonus: Out of your total points, only ${userPurchasedPts} are purchased real-cash points. Signup bonuses, system incentives, and referral commissions (totaling ${user.points - userPurchasedPts} points) are strictly restricted to in-app simulations/trades and cannot be converted to USDT cashouts.` 
+    });
   }
 
   if (user.points < amountPoints) {
-    return res.status(400).json({ error: "Insufficient balance for this withdrawal request." });
+    return res.status(400).json({ error: "Insufficient balance points." });
   }
 
+  // Deduct points
   user.points -= amountPoints;
+  user.purchased_points = Math.max(0, (user.purchased_points || 0) - amountPoints);
+
+  // Conversion rate: 250 PTS = $1 USDT (High Penalty rate - they lose 60% of real purchasing power!)
+  const cashoutUSD = parseFloat((amountPoints / 250).toFixed(2));
 
   const request = {
     id: "wd-" + Date.now(),
@@ -354,12 +721,14 @@ app.post("/api/points/withdraw", (req, res) => {
     amount_points: parseInt(amountPoints),
     usdt_address: usdtAddress,
     status: "pending",
+    cashout_fee_penalty_pct: 60, // 60% loss
+    amount_usdt_net: cashoutUSD, // bad business conversion
     created_at: new Date().toISOString()
   };
 
   db.withdrawal_requests.unshift(request);
   writeDB(db);
-  addLog(user.id, user.email, "WITHDRAWAL_REQUEST", `Requested cashout of ${amountPoints} points ($${amountPoints/100} USDT) to ${usdtAddress}.`);
+  addLog(user.id, user.email, "WITHDRAWAL_REQUEST", `Requested cashout of ${amountPoints} points (converted to ${cashoutUSD} USDT under high premium loss conversion) to ${usdtAddress}.`);
 
   res.json({ success: true, pointsLeft: user.points, request });
 });
@@ -372,16 +741,19 @@ app.post("/api/points/buy", (req, res) => {
   if (!user) return res.status(404).json({ error: "User not found" });
 
   const packages = [
-    { id: "pkg1", name: "Lite Starter Kit", usd: 5, points: 50 },
-    { id: "pkg2", name: "Popular Stack", usd: 10, points: 110 },
-    { id: "pkg3", name: "Power Trader Pack", usd: 25, points: 280 },
-    { id: "pkg4", name: "VIP Ledger Bulk", usd: 50, points: 600 }
+    { id: "pkg1", name: "Basic Core License", usd: 4, points: 400, tier: "basic" },
+    { id: "pkg2", name: "Professional Level License", usd: 10, points: 1200, tier: "professional" },
+    { id: "pkg3", name: "Business Sovereign License", usd: 20, points: 2600, tier: "executive" },
+    { id: "pkg4", name: "Elite Custom Ledger License", usd: 30, points: 4500, tier: "elite" }
   ];
 
   const pkg = packages.find(p => p.id === packageId);
   if (!pkg) return res.status(400).json({ error: "Invalid package selection" });
 
   user.points += pkg.points;
+  // Increase purchased withdrawable points
+  user.purchased_points = (user.purchased_points || 0) + pkg.points;
+  user.subscription_tier = pkg.tier; // Sync subscription tier!
 
   // Credit referred referrer a calculated portion of purchased points (referral system)
   let referralBonusLog = "";
@@ -392,17 +764,54 @@ app.post("/api/points/buy", (req, res) => {
       const bonus = Math.round(pkg.points * (referralPercent / 100));
       if (bonus > 0) {
         referrer.points += bonus;
-        addLog(referrer.id, referrer.email, "REFERRAL_PURCHASE_COMMISSION", `Allotted ${bonus} points commission (from referred user ${user.email}'s purchase of ${pkg.points} pts).`);
-        referralBonusLog = ` Affiliated referrer ${referrer.email} rewarded with a commission allocation of +${bonus} points.`;
+        // Referrals are considered promotion/bonus only! NOT added to referrer.purchased_points
+        addLog(referrer.id, referrer.email, "REFERRAL_PURCHASE_COMMISSION", `Allotted ${bonus} points referral bonus commission (from user ${user.email}'s purchase of ${pkg.points} pts). Promotional points only.`);
+        referralBonusLog = ` Affiliated referrer ${referrer.email} rewarded with promo allocation of +${bonus} points.`;
       }
     }
   }
 
   writeDB(db);
 
-  addLog(user.id, user.email, "PACK_BUY", `Successfully bought ${pkg.points} points using simulated Paystack Gateway checkout payment ($${pkg.usd} USD).${referralBonusLog}`);
+  addLog(user.id, user.email, "PACK_BUY", `Successfully bought ${pkg.points} points, upgrading to ${pkg.tier.toUpperCase()} subscription using simulated Paystack Gateway checkout payment ($${pkg.usd} USD). Direct purchased points set to withdrawable ledger.${referralBonusLog}`);
 
-  res.json({ success: true, points: user.points, addedPoints: pkg.points });
+  res.json({ success: true, points: user.points, addedPoints: pkg.points, user });
+});
+
+// Telecomm mobile network recharge endpoint (Data & Airtime Topup)
+app.post("/api/telco/recharge", (req, res) => {
+  const { userId, network, type, phone, payloadId, amountNaira, pointsCost } = req.body;
+  if (!userId || !network || !type || !phone || !pointsCost) {
+    return res.status(400).json({ error: "Telemetry error: Missing recharge parameters" });
+  }
+
+  const db = getDB();
+  const user = db.users.find((u: any) => u.id === userId);
+  if (!user) return res.status(404).json({ error: "User session not authenticated." });
+
+  const calculatedCost = parseInt(pointsCost);
+  if (user.points < calculatedCost) {
+    return res.status(400).json({ error: `Insufficient point balance. You require ${calculatedCost} PLS points for this top-up.` });
+  }
+
+  // Deduct points
+  user.points -= calculatedCost;
+  // Decrease purchased withdrawable points too to keep things balanced
+  user.purchased_points = Math.max(0, (user.purchased_points || 0) - calculatedCost);
+
+  writeDB(db);
+
+  const detailInfo = type === "airtime" 
+    ? `Purchased ₦${amountNaira} Airtime recharge package` 
+    : `Purchased Data bundle package (${payloadId || 'High-speed package'})`;
+
+  addLog(user.id, user.email, "TELCO_RECHARGE", `Completed telecom top-up on ${network} of ${phone}. ${detailInfo}. Spent ${calculatedCost} PLS points.`);
+
+  res.json({ 
+    success: true, 
+    pointsLeft: user.points, 
+    message: `🎉 Recharge successful! ${network} cell node has successfully distributed raw signals to cellular line ${phone}.` 
+  });
 });
 
 // Receipts generator purchase unlock
@@ -420,6 +829,7 @@ app.post("/api/receipts/buy", (req, res) => {
   }
 
   user.points -= price;
+  user.purchased_points = Math.max(0, (user.purchased_points || 0) - price);
 
   const newReceipt = {
     id: "rcpt-" + Date.now(),
@@ -1120,6 +1530,270 @@ app.post("/api/admin/wipe-database", (req, res) => {
 
   addLog("admin-123", "admin@stylehub.com", "ADMIN_WIPE_ALL", "Triggered deep global database reset: Wiped all transactional, user registry, listing, and messaging history caches clean.");
   res.json({ success: true });
+});
+
+// ----------------------------------------------------
+// CRYPTO BROKERS SUITE ENDPOINTS
+// ----------------------------------------------------
+
+// 1. Get List of all Crypto Brokers with Unlocked Indicators
+app.get("/api/crypto-brokers/list", (req, res) => {
+  const { userId } = req.query;
+  const db = getDB();
+  const brokers = db.crypto_brokers || [];
+  
+  const unlockedIds = db.user_unlocked_brokers
+    ? db.user_unlocked_brokers
+        .filter((u: any) => u.userId === userId)
+        .map((u: any) => u.brokerId)
+    : [];
+
+  const userInvestments = db.user_investments
+    ? db.user_investments.filter((i: any) => i.userId === userId && i.status === "active")
+    : [];
+
+  const mappedBrokers = brokers.map((b: any) => {
+    const isUnlocked = unlockedIds.includes(b.id);
+    const activeInvestment = userInvestments.find((i: any) => i.brokerId === b.id);
+    return {
+      ...b,
+      unlocked: isUnlocked,
+      activeInvestment: activeInvestment || null
+    };
+  });
+
+  res.json(mappedBrokers);
+});
+
+// 2. Unlock/Purchase Access to a Broker
+app.post("/api/crypto-brokers/unlock", (req, res) => {
+  const { userId, brokerId } = req.body;
+  const db = getDB();
+  const user = db.users.find((u: any) => u.id === userId);
+  const broker = db.crypto_brokers.find((b: any) => b.id === brokerId);
+
+  if (!user || !broker) {
+    return res.status(404).json({ error: "User or Broker record not found" });
+  }
+
+  // Check if already unlocked
+  const alreadyUnlocked = db.user_unlocked_brokers.some(
+    (u: any) => u.userId === userId && u.brokerId === brokerId
+  );
+  if (alreadyUnlocked) {
+    return res.json({ success: true, message: "Already unlocked" });
+  }
+
+  if (user.points < broker.price_points) {
+    return res.status(400).json({ error: `Insufficient point balance. This premium broker requires ${broker.price_points} PLS to unlock.` });
+  }
+
+  // Deduct points
+  user.points -= broker.price_points;
+  
+  // Register unlock mapping
+  db.user_unlocked_brokers.push({
+    id: "unl-" + Date.now(),
+    userId,
+    brokerId,
+    unlockedAt: new Date().toISOString()
+  });
+
+  addLog(user.id, user.email, "BROKER_UNLOCK", `Unlocked fully autonomous access to crypto broker ${broker.name} for ${broker.price_points} points.`);
+  writeDB(db);
+
+  res.json({
+    success: true,
+    pointsLeft: user.points,
+    message: `Successfully chartered ${broker.name}!`
+  });
+});
+
+// 3. Invest Points in an Unlocked Broker
+app.post("/api/crypto-brokers/invest", (req, res) => {
+  const { userId, brokerId, amountPoints } = req.body;
+  const amt = parseInt(amountPoints);
+  
+  if (isNaN(amt) || amt <= 0) {
+    return res.status(400).json({ error: "Invalid points amount specified." });
+  }
+
+  const db = getDB();
+  const user = db.users.find((u: any) => u.id === userId);
+  const broker = db.crypto_brokers.find((b: any) => b.id === brokerId);
+
+  if (!user || !broker) {
+    return res.status(404).json({ error: "Reference user or broker profiles not found." });
+  }
+
+  // Guard against locking
+  const isUnlocked = db.user_unlocked_brokers.some(
+    (unl: any) => unl.userId === userId && unl.brokerId === brokerId
+  );
+
+  // Allow admin complete sandbox override bypass without unlocking
+  const isAdmin = user.role === "admin";
+  if (!isUnlocked && !isAdmin) {
+    return res.status(403).json({ error: "Sovereign constraint failed: This broker is locked. Pay the required charter points to invest." });
+  }
+
+  if (amt < broker.minimum_investment_points) {
+    return res.status(400).json({ error: `Minimum simulation investment for this node is ${broker.minimum_investment_points} PLS points.` });
+  }
+
+  if (user.points < amt) {
+    return res.status(400).json({ error: `Insufficient main balance. You only have ${user.points} PLS points available.` });
+  }
+
+  // Deduct points & create investment ledger
+  user.points -= amt;
+
+  const investmentId = "inv-" + Date.now();
+  db.user_investments.push({
+    id: investmentId,
+    userId,
+    user_email: user.email,
+    brokerId,
+    brokerName: broker.name,
+    amountPoints: amt,
+    yieldPoints: 0,
+    status: "active",
+    createdAt: new Date().toISOString()
+  });
+
+  addLog(user.id, user.email, "BROKER_INVEST", `Allocated ${amt} points to node ${broker.name} for active compound simulation.`);
+  writeDB(db);
+
+  res.json({
+    success: true,
+    pointsLeft: user.points,
+    message: `Successfully allocated investment of ${amt} PLS points!`
+  });
+});
+
+// 4. Liquidate / Reclaim Investment back to Main Account
+app.post("/api/crypto-brokers/reclaim", (req, res) => {
+  const { userId, investmentId } = req.body;
+  const db = getDB();
+  const user = db.users.find((u: any) => u.id === userId);
+  const investment = db.user_investments.find((i: any) => i.id === investmentId && i.userId === userId);
+
+  if (!user || !investment) {
+    return res.status(404).json({ error: "Active investment or user record not found." });
+  }
+
+  if (investment.status !== "active") {
+    return res.status(400).json({ error: "Simulation investment has already been liquidated and returned." });
+  }
+
+  const payoutPoints = investment.amountPoints + Math.round(investment.yieldPoints || 0);
+  
+  // Refund user points
+  user.points += payoutPoints;
+  investment.status = "liquidated";
+  investment.liquidatedAt = new Date().toISOString();
+
+  addLog(user.id, user.email, "BROKER_RECLAIM", `Liquidated investment ${investmentId} from node. Collected initial capital plus simulated yield: Total ${payoutPoints} PLS.`);
+  writeDB(db);
+
+  res.json({
+    success: true,
+    pointsRemaining: user.points,
+    payoutPoints,
+    message: `Liquidation complete! returned ${payoutPoints} PLS points to your hub wallet.`
+  });
+});
+
+// 5. Trigger Yield Generation Simulation step (1-Click Cycle Run!)
+app.post("/api/crypto-brokers/simulate-yield", (req, res) => {
+  const { userId, investmentId } = req.body;
+  const db = getDB();
+  const user = db.users.find((u: any) => u.id === userId);
+  const investment = db.user_investments.find((i: any) => i.id === investmentId && i.userId === userId);
+
+  if (!user || !investment) {
+    return res.status(404).json({ error: "Active investment record not found." });
+  }
+
+  const broker = db.crypto_brokers.find((b: any) => b.id === investment.brokerId);
+  if (!broker) {
+    return res.status(404).json({ error: "Parent broker algorithm not found." });
+  }
+
+  // Calculate high-fidelity volatility yield segment based on APY
+  // e.g. Daily yield simulation = (APY / 365) + some volatility factor.
+  const baseYieldReward = (broker.projected_apy / 100) * 0.12; // Simulate a massive fast epoch jump (12%)
+  const volatilityFactor = (Math.random() - (broker.risk_level === "Extreme" ? 0.45 : 0.2)) * (broker.projected_apy / 100) * 0.08;
+  const earnedPercent = baseYieldReward + volatilityFactor;
+  
+  const pointsDeltaCount = Math.round(investment.amountPoints * earnedPercent);
+  
+  investment.yieldPoints = (investment.yieldPoints || 0) + pointsDeltaCount;
+  
+  addLog(user.id, user.email, "YIELD_SIMULATION_TICK", `Generated simulated trade loop for ${broker.name}. Balance yield change: ${pointsDeltaCount > 0 ? "+" : ""}${pointsDeltaCount} PLS points.`);
+  writeDB(db);
+
+  res.json({
+    success: true,
+    yieldDelta: pointsDeltaCount,
+    totalYield: investment.yieldPoints,
+    message: `Yield epoch complete! Transaction delta: ${pointsDeltaCount} PLS`
+  });
+});
+
+// 6. Admin Sovereign Overwrite Parameters for Crypto Brokers
+app.post("/api/admin/crypto-brokers/update", (req, res) => {
+  const { currentAdminId, brokerId, name, alias, description, price_points, risk_level, projected_apy, minimum_investment_points, is_active } = req.body;
+  const db = getDB();
+  const admin = db.users.find((u: any) => u.id === currentAdminId && u.role === "admin");
+  if (!admin) return res.status(403).json({ error: "Access denied. Master Admin authority required." });
+
+  const broker = db.crypto_brokers.find((b: any) => b.id === brokerId);
+  if (!broker) return res.status(404).json({ error: "Crypto broker record not found." });
+
+  // Sovereign overrule overwrite
+  if (name !== undefined) broker.name = name;
+  if (alias !== undefined) broker.alias = alias;
+  if (description !== undefined) broker.description = description;
+  if (price_points !== undefined) broker.price_points = parseInt(price_points) || 0;
+  if (risk_level !== undefined) broker.risk_level = risk_level;
+  if (projected_apy !== undefined) broker.projected_apy = parseFloat(projected_apy) || 0;
+  if (minimum_investment_points !== undefined) broker.minimum_investment_points = parseInt(minimum_investment_points) || 0;
+  if (is_active !== undefined) broker.is_active = is_active;
+
+  addLog(admin.id, admin.email, "ADMIN_BROKER_OVERRULE", `Sovereign Admin overruling configuration on node ${broker.alias || broker.name}.`);
+  writeDB(db);
+
+  res.json({
+    success: true,
+    broker,
+    message: `System overwrite on node ${broker.alias} successful.`
+  });
+});
+
+// 7. Quick Admin Point Top-up at Will (Fulfills the user request 'can add even more points at will')
+app.post("/api/admin/add-points", (req, res) => {
+  const { currentAdminId, targetUserId, bonusPoints } = req.body;
+  const db = getDB();
+  const admin = db.users.find((u: any) => u.id === currentAdminId && u.role === "admin");
+  if (!admin) return res.status(403).json({ error: "Access denied." });
+
+  const targetUser = db.users.find((u: any) => u.id === targetUserId);
+  if (!targetUser) return res.status(404).json({ error: "Target user not found." });
+
+  const ptsToAdd = parseInt(bonusPoints);
+  if (isNaN(ptsToAdd)) return res.status(400).json({ error: "Invalid points value specification." });
+
+  targetUser.points += ptsToAdd;
+
+  addLog(admin.id, admin.email, "ADMIN_POINTS_GRANT", `Sovereign admin injected ${ptsToAdd} points directly into user ${targetUser.email}. New user balance: ${targetUser.points} PLS.`);
+  writeDB(db);
+
+  res.json({
+    success: true,
+    newPoints: targetUser.points,
+    message: `Instantly granted ${ptsToAdd} points. New wallet balance: ${targetUser.points} PLS.`
+  });
 });
 
 

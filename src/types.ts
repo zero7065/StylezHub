@@ -15,8 +15,21 @@ export interface User {
     address: string;
     id_card?: string;
   };
+  subscription_tier?: 'basic' | 'professional' | 'executive' | 'elite';
   black_room_alias?: string;
   trust_score: number;
+  created_at: string;
+}
+
+export interface SigniaTemplate {
+  id: string;
+  name: string;
+  category: string;
+  html_content: string;
+  uploaded_by?: {
+    id: string;
+    email: string;
+  };
   created_at: string;
 }
 
@@ -157,4 +170,39 @@ export interface SystemSettings {
   telegram_url: string;
   support_email: string;
   ai_script?: string;
+}
+
+export interface CryptoBrokerInvestment {
+  id: string;
+  userId: string;
+  user_email: string;
+  brokerId: string;
+  brokerName: string;
+  amountPoints: number;
+  yieldPoints: number;
+  status: 'active' | 'liquidated';
+  createdAt: string;
+  liquidatedAt?: string;
+}
+
+export interface CryptoBroker {
+  id: string;
+  name: string;
+  alias: string;
+  description: string;
+  price_points: number;
+  risk_level: 'Low' | 'Medium' | 'High' | 'Very High' | 'Extreme';
+  projected_apy: number;
+  minimum_investment_points: number;
+  is_active: boolean;
+  detailed_readme: string;
+  mock_trades: Array<{
+    id: string;
+    ticker: string;
+    amount: number;
+    profit: number;
+    time: string;
+  }>;
+  unlocked?: boolean;
+  activeInvestment?: CryptoBrokerInvestment | null;
 }

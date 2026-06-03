@@ -17,6 +17,7 @@ export default function BentoHeader({ user, settings, onLogout, activeNav }: Ben
       case "marketplace": return "Escrow Digital Marketplace";
       case "blackroom": return "The Black Room Ring";
       case "profile": return "Profile & AML Security";
+      case "brokers": return "Crypto Investment Brokers";
       default: return "StyleHub Core";
     }
   };
@@ -28,16 +29,17 @@ export default function BentoHeader({ user, settings, onLogout, activeNav }: Ben
       case "marketplace": return "Buy premium numbers, boosting, or rent verified coders.";
       case "blackroom": return "Zero leak anonymous ring for peer digital trading.";
       case "profile": return "Review identity verification status and cashout limits.";
+      case "brokers": return "Sovereign nodes with compound simulated APY and live trade signal telemetry.";
       default: return "Trade, Simulate, Escrow – Beyond boundaries.";
     }
   };
 
   return (
-    <div className="bg-[#0B0E14]/80 border border-slate-800/80 rounded-3xl p-6 backdrop-blur-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
+    <div className="bg-[#121620] border border-zinc-805 rounded-3xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
       {/* Platform Branding & Navigation Info */}
       <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-mono tracking-widest text-[#00E5FF] uppercase font-bold px-2 py-0.5 rounded-full bg-cyan-950/40 border border-cyan-500/20">
+          <span className="text-[9px] font-mono tracking-widest text-[#10B981] uppercase font-bold px-3 py-1 rounded-md bg-emerald-950/30 border border-emerald-500/20">
             StyleHub Fintech
           </span>
           <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-[9.5px] font-bold">
@@ -67,14 +69,16 @@ export default function BentoHeader({ user, settings, onLogout, activeNav }: Ben
       {user ? (
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
           {/* Balance Widget */}
-          <div className="flex items-center gap-3 bg-slate-900 border border-slate-800/80 rounded-2xl p-2 px-4 shadow-inner">
-            <div className="h-8 w-8 rounded-full bg-cyan-500/10 text-[#00E5FF] flex items-center justify-center border border-cyan-500/20">
+          <div className="flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-2xl p-2 px-4 shadow-inner">
+            <div className="h-8 w-8 rounded-full bg-emerald-500/10 text-[#10B981] flex items-center justify-center border border-emerald-500/20">
               <Coins className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-[9px] text-gray-500 font-bold block uppercase tracking-wider">REDEEM POINTS</span>
-              <span className="text-sm font-black text-cyan-400 font-mono tracking-tight block">
-                {user.points} <span className="text-[10px] text-gray-400 font-sans font-normal">PLS</span>
+              <span className="text-[8px] text-zinc-400 font-bold block uppercase tracking-wider">
+                {user.subscription_tier ? `${user.subscription_tier} tier` : "free basic"}
+              </span>
+              <span className="text-sm font-black text-[#10B981] font-mono tracking-tight block">
+                {user.points.toLocaleString()} <span className="text-[10px] text-zinc-400 font-sans font-normal">PLS</span>
               </span>
             </div>
           </div>

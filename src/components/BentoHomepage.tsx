@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { 
   Sparkles, ShieldCheck, ShoppingBag, Radio, Shield, HelpCircle, 
   TrendingUp, CreditCard, ChevronRight, ChevronLeft, Award, Compass, Star, 
-  Lock, Eye, Flame, Users, Landmark, Layers, ArrowUpRight, CheckCircle2, Globe, Heart, Quote 
+  Lock, Eye, Flame, Users, Landmark, Layers, ArrowUpRight, CheckCircle2, Globe, Heart, Quote,
+  Smartphone, Wifi
 } from "lucide-react";
 import { User, GalleryItem, MarketplaceListing, SystemSettings } from "../types";
 import AuthCard from "./AuthCard";
@@ -18,7 +19,7 @@ interface BentoHomepageProps {
   isBuyingPoints: boolean;
   onSimulatePointsBuy: () => void;
   onAuthSuccess: (user: User) => void;
-  onNavigate: (tab: "home" | "generator" | "marketplace" | "blackroom" | "profile") => void;
+  onNavigate: (tab: "home" | "generator" | "marketplace" | "blackroom" | "profile" | "brokers") => void;
 }
 
 export default function BentoHomepage({
@@ -37,6 +38,87 @@ export default function BentoHomepage({
   // Demo iframe template modal
   const [demoTemplate, setDemoTemplate] = useState<GalleryItem | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
+
+  // Telecom state management
+  const [rechargeNetwork, setRechargeNetwork] = useState<"mtn" | "airtel" | "glo" | "9mobile">("mtn");
+  const [rechargeType, setRechargeType] = useState<"airtime" | "data">("airtime");
+  const [rechargePhone, setRechargePhone] = useState("");
+  const [customAirtime, setCustomAirtime] = useState("500");
+  const [dataPackage, setDataPackage] = useState("data_1gb");
+  const [isProcessingRecharge, setIsProcessingRecharge] = useState(false);
+  const [rechargeMessage, setRechargeMessage] = useState<string | null>(null);
+  const [rechargeErr, setRechargeErr] = useState<string | null>(null);
+
+  const pointsCost = rechargeType === "airtime" 
+    ? Math.round((parseFloat(customAirtime) || 0) / 10)
+    : dataPackage === "data_1gb" ? 150
+    : dataPackage === "data_2gb" ? 350
+    : dataPackage === "data_5gb" ? 600
+    : dataPackage === "data_10gb" ? 1100
+    : 2500;
+
+  const handleTelecomRechargeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      alert("🔒 Authorization Gated: Please log-in or register before completing the telecom exchange.");
+      return;
+    }
+    if (!rechargePhone || rechargePhone.trim().length < 10) {
+      alert("❌ Invalid input: Please check the phone number coordinates.");
+      return;
+    }
+    if (user.points < pointsCost) {
+      alert(`❌ Overdrawn Balance: You require ${pointsCost} PLS points, but you currently have ${user.points} PLS. Please top-up via subscription/paystack modal first.`);
+      return;
+    }
+
+    setRechargeMessage(null);
+    setRechargeErr(null);
+    setIsProcessingRecharge(true);
+
+    try {
+      const res = await fetch("/api/telco/recharge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          network: rechargeNetwork.toUpperCase(),
+          type: rechargeType,
+          phone: rechargePhone.trim(),
+          payloadId: rechargeType === "data" ? dataPackage : undefined,
+          amountNaira: rechargeType === "airtime" ? parseFloat(customAirtime) || 100 : undefined,
+          pointsCost
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setRechargeMessage(data.message || "🎉 Recharge completed successfully!");
+        
+        // Refresh session
+        try {
+          const uRes = await fetch("/api/auth/me", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.id })
+          });
+          const uData = await uRes.json();
+          if (uData.success) {
+            onAuthSuccess(uData.user);
+          }
+        } catch (errSession) {
+          console.error("Local session refresh error:", errSession);
+        }
+      } else {
+        setRechargeErr(data.error || "External carrier signals dropped the packets.");
+      }
+    } catch (carrierErr) {
+      console.error(carrierErr);
+      setRechargeErr("Failed to connect to telecommunication dispatch node.");
+    } finally {
+      setIsProcessingRecharge(false);
+    }
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -335,6 +417,15 @@ export default function BentoHomepage({
               </div>
             ))}
           </div>
+
+          <div className="pt-2 border-t border-slate-850/60 flex justify-end">
+            <button
+              onClick={() => onNavigate("brokers")}
+              className="text-[10px] font-mono font-bold text-cyan-400 hover:text-white flex items-center gap-1 transition-all cursor-pointer bg-slate-950 border border-slate-850 py-1.5 px-3 rounded-lg leading-tight hover:border-cyan-500/20"
+            >
+              Access Autonomous Crypto Terminals ⚙️
+            </button>
+          </div>
         </div>
       </div>
 
@@ -504,6 +595,215 @@ export default function BentoHomepage({
             {isBuyingPoints ? "Processing Gateway Matrix..." : "Simulate Paystack Checkout"}
           </button>
         </div>
+      </div>
+
+      {/* 6B. INSTANT MOBILE TELECOMMUNICATION & DATA EXCHANGE */}
+      <div className="bg-slate-900/40 p-6 border border-slate-800 rounded-3xl space-y-6">
+        <div className="flex justify-between items-center pb-3 border-b border-slate-800/80">
+          <div className="space-y-0.5">
+            <h3 className="text-xs font-black tracking-wider uppercase text-[#00E5FF] flex items-center gap-2">
+              <Smartphone className="w-4 h-4" /> ⚡ TELCO AIRTIME & SUPER-FAST DATA EXCHANGE
+            </h3>
+            <p className="text-[10px] text-gray-500 font-mono">
+              DIRECT CELLULAR INJECTION CORE • NO FEES • BALANCED POINT DISTRIBUTION
+            </p>
+          </div>
+          <span className="text-[9px] font-mono font-bold bg-cyan-950/40 border border-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded shadow-inner">
+            CARRIER HOSTS LIVE
+          </span>
+        </div>
+
+        <form onSubmit={handleTelecomRechargeSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left Column: Network & Details */}
+          <div className="space-y-4">
+            <div>
+              <label className="text-[11px] font-bold text-slate-300 font-mono uppercase tracking-wider block mb-2">
+                1. Select Network Carrier Provider
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { id: "mtn", name: "MTN", color: "border-yellow-500 text-yellow-400 bg-yellow-950/20" },
+                  { id: "airtel", name: "Airtel", color: "border-red-500 text-red-400 bg-red-950/20" },
+                  { id: "glo", name: "Glo", color: "border-green-500 text-green-400 bg-green-950/20" },
+                  { id: "9mobile", name: "9mobile", color: "border-teal-500 text-teal-400 bg-teal-950/20" }
+                ].map((net) => (
+                  <button
+                    key={net.id}
+                    type="button"
+                    onClick={() => {
+                      setRechargeNetwork(net.id as any);
+                      setRechargeMessage(null);
+                      setRechargeErr(null);
+                    }}
+                    className={`p-2.5 text-center border-2 rounded-xl font-bold font-mono text-xs transition-all cursor-pointer block ${
+                      rechargeNetwork === net.id
+                        ? `${net.color} ring-1 ring-cyan-400/50`
+                        : "border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    {net.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-bold text-slate-300 font-mono uppercase tracking-wider block mb-2">
+                  2. Exchange Category
+                </label>
+                <div className="grid grid-cols-2 gap-1 bg-slate-950 p-1 rounded-lg border border-slate-850">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRechargeType("airtime");
+                      setRechargeMessage(null);
+                      setRechargeErr(null);
+                    }}
+                    className={`py-1.5 text-[10px] font-bold font-mono tracking-wide rounded-md transition-all cursor-pointer ${
+                      rechargeType === "airtime"
+                        ? "bg-slate-800 text-white"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Airtime
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRechargeType("data");
+                      setRechargeMessage(null);
+                      setRechargeErr(null);
+                    }}
+                    className={`py-1.5 text-[10px] font-bold font-mono tracking-wide rounded-md transition-all cursor-pointer ${
+                      rechargeType === "data"
+                        ? "bg-slate-800 text-white"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Mobile Data
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-300 font-mono uppercase tracking-wider block mb-2">
+                  3. Phone Number (SIM)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 08031234567"
+                  value={rechargePhone}
+                  onChange={(e) => setRechargePhone(e.target.value)}
+                  className="w-full bg-slate-950 text-slate-200 border border-slate-800 px-3 py-1.5 rounded-lg text-xs font-mono focus:outline-none focus:border-cyan-400 placeholder:text-gray-600"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Dynamic Price Calculation & Trigger */}
+          <div className="bg-slate-950/60 p-4.5 border border-slate-850 rounded-2xl flex flex-col justify-between space-y-4">
+            <div className="space-y-4">
+              {rechargeType === "airtime" ? (
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 font-mono uppercase tracking-wider block mb-1.5">
+                    Select Airtime Amount (₦ Naira)
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    {["200", "500", "1000", "2000", "5000", "10000"].map((pres) => (
+                      <button
+                        key={pres}
+                        type="button"
+                        onClick={() => setCustomAirtime(pres)}
+                        className={`py-1.5 font-mono text-xs font-bold border rounded-lg transition-all cursor-pointer ${
+                          customAirtime === pres
+                            ? "border-cyan-400 text-cyan-400 bg-cyan-950/10"
+                            : "border-slate-800 bg-slate-950 text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        ₦{parseFloat(pres).toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono text-slate-400">Custom ₦</span>
+                    <input
+                      type="number"
+                      value={customAirtime}
+                      onChange={(e) => setCustomAirtime(e.target.value)}
+                      className="bg-slate-950 border border-slate-800 px-2 py-1 rounded text-xs font-mono text-cyan-400 w-32 focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 font-mono uppercase tracking-wider block mb-1.5">
+                    Select Data Package Value (High Speed)
+                  </label>
+                  <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
+                    {[
+                      { id: "data_1gb", label: "1.0 GB Premium High-Speed (30 Days)", points: 150 },
+                      { id: "data_2gb", label: "2.5 GB Super-Fast Bundle (30 Days)", points: 350 },
+                      { id: "data_5gb", label: "5.0 GB Extreme Sovereign (30 Days)", points: 600 },
+                      { id: "data_10gb", label: "10.0 GB Corporate High-Yield (30 Days)", points: 1100 },
+                      { id: "data_25gb", label: "25.0 GB Sovereign Infinite (30 Days)", points: 2500 }
+                    ].map((pack) => (
+                      <button
+                        key={pack.id}
+                        type="button"
+                        onClick={() => setDataPackage(pack.id)}
+                        className={`w-full p-2 border rounded-xl flex justify-between items-center text-left transition-all text-xs font-mono cursor-pointer ${
+                          dataPackage === pack.id
+                            ? "border-cyan-400 text-cyan-400 bg-cyan-950/10"
+                            : "border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        <span>{pack.label}</span>
+                        <span className="font-bold text-cyan-400">+{pack.points} PTS</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Cost ledger readout */}
+              <div className="flex justify-between items-center p-2.5 bg-slate-950 rounded-xl border border-slate-800/60 text-xs font-mono">
+                <span className="text-gray-500">CONVERSION POINT COST</span>
+                <span className="text-sm font-black text-cyan-400">{pointsCost} PLS Points</span>
+              </div>
+            </div>
+
+            {/* Notifications & Submit */}
+            <div className="space-y-3">
+              {rechargeMessage && (
+                <div className="p-2.5 bg-green-950/40 text-green-400 border border-green-500/20 rounded-xl text-[10.5px] font-mono leading-relaxed">
+                  {rechargeMessage}
+                </div>
+              )}
+              {rechargeErr && (
+                <div className="p-2.5 bg-red-950/45 text-red-400 border border-red-500/25 rounded-xl text-[10.5px] font-mono leading-relaxed animate-pulse">
+                  {rechargeErr}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isProcessingRecharge}
+                className="w-full py-2.5 bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black rounded-xl text-[11px] uppercase shadow-lg shadow-cyan-400/10 tracking-widest transition-all cursor-pointer hover:brightness-110 flex items-center justify-center gap-1.5"
+              >
+                {isProcessingRecharge ? (
+                  <>
+                    <span className="animate-spin text-sm">⚡</span> Discharging Cellular Package...
+                  </>
+                ) : (
+                  <>
+                    <Wifi className="w-3.5 h-3.5" /> ⚡ Recharge SIM with Points
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
 
       {/* 7. CUSTOMERS SATISFACTION FEEDBACK ROW */}

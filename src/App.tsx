@@ -12,6 +12,7 @@ import SupportWidget from "./components/SupportWidget";
 import AppSimulator from "./components/AppSimulator";
 import BentoHomepage from "./components/BentoHomepage";
 import AuthCard from "./components/AuthCard";
+import CryptoBrokersPortal from "./components/CryptoBrokersPortal";
 
 export default function App() {
   // Authentication & session state
@@ -25,8 +26,8 @@ export default function App() {
   // Global app configs
   const [settings, setSettings] = useState<SystemSettings | null>(null);
 
-  // Live navigation state: 'home' | 'generator' | 'marketplace' | 'blackroom' | 'profile'
-  const [activeTab, setActiveTab] = useState<"home" | "generator" | "marketplace" | "blackroom" | "profile">("home");
+  // Live navigation state: 'home' | 'generator' | 'marketplace' | 'blackroom' | 'profile' | 'brokers'
+  const [activeTab, setActiveTab] = useState<"home" | "generator" | "marketplace" | "blackroom" | "profile" | "brokers">("home");
 
   // Receipt simulator states
   const [simBank, setSimBank] = useState("opay");
@@ -39,6 +40,14 @@ export default function App() {
   const [unlockedReceipt, setUnlockedReceipt] = useState<any>(null);
   const [isGeneratingReceipt, setIsGeneratingReceipt] = useState(false);
   const [simulationActive, setSimulationActive] = useState(false);
+
+  // Signia custom templates states
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [generatorMode, setGeneratorMode] = useState<"standard" | "signia">("standard");
+  const [signiaFileContent, setSigniaFileContent] = useState<string>("");
+  const [signiaFileName, setSigniaFileName] = useState<string>("");
+  const [uploadingTemplate, setUploadingTemplate] = useState<boolean>(false);
 
   // Marketplace states
   const [mktListings, setMktListings] = useState<MarketplaceListing[]>([]);
@@ -156,6 +165,14 @@ export default function App() {
       const lRes = await fetch("/api/admin/logs");
       const lData = await lRes.json();
       setRecentLogs(lData.slice(0, 10));
+
+      // Templates list loading
+      const tRes = await fetch("/api/templates/list");
+      const tData = await tRes.json();
+      setTemplates(tData);
+      if (tData.length > 0 && !selectedTemplate) {
+        setSelectedTemplate(tData[0]);
+      }
 
     } catch (err) {
       console.error(err);
@@ -470,7 +487,8 @@ export default function App() {
 
       const data = await res.json();
       if (data.success) {
-        alert(`SUCCESS! Registered withdrawal request for ${withdrawPointsAmt} points ($${parseInt(withdrawPointsAmt) / 100} USDT). Pending admin manual processing.`);
+        const estUsdt = (parseInt(withdrawPointsAmt) / 250).toFixed(2);
+        alert(`SUCCESS! Registered withdrawal request for ${withdrawPointsAmt} points (converting to ${estUsdt} USDT clean crypto coordinates under 60% high-loss penalty). Pending admin manual processing.`);
         handleRefreshUserPoints();
         setWithdrawPointsAmt("");
         setWithdrawUSDTAddress("");
@@ -818,193 +836,503 @@ export default function App() {
               />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-            {/* Variables Customizer form */}
-            <form onSubmit={handleCreateMockTransactionReceipt} className="md:col-span-5 bg-[#0E131F]/95 p-6 border border-slate-800 rounded-3xl space-y-4">
-              <div className="flex justify-between items-center pb-2 border-b border-indigo-900/30">
-                <h3 className="text-xs font-black uppercase text-cyan-400 tracking-widest">Receipt custom variables</h3>
-                <span className="text-[9px] text-gray-400 font-mono">Sim Price: 10 PLS</span>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10.5px] text-gray-400 font-bold uppercase tracking-wider block">Fintech Brand</label>
-                <select
-                  id="generator-bank-select"
-                  value={simBank}
-                  onChange={(e) => setSimBank(e.target.value)}
-                  className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4.5 py-2.5 text-xs text-white uppercase font-mono tracking-wider focus:outline-none"
-                >
-                  <option value="opay">OPay Wallet</option>
-                  <option value="kuda">Kuda Microfinance</option>
-                  <option value="moniepoint">Moniepoint Bank</option>
-                  <option value="palmpay">PalmPay Wallet</option>
-                  <option value="gtbank">GTBank PLC</option>
-                  <option value="accessbank">Access Bank</option>
-                  <option value="firstbank">FirstBank Nigeria</option>
-                  <option value="zenith">Zenith Bank Plc</option>
-                  <option value="uba">United Bank For Africa (UBA)</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-gray-400 font-bold uppercase block">Sender Name</label>
-                  <input
-                    type="text"
-                    id="generator-sender-input"
-                    value={simSender}
-                    onChange={(e) => setSimSender(e.target.value.toUpperCase())}
-                    className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2 text-xs font-mono uppercase focus:outline-none"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-gray-400 font-bold uppercase block">Recipient Name</label>
-                  <input
-                    type="text"
-                    id="generator-recipient-input"
-                    value={simReceiver}
-                    onChange={(e) => setSimReceiver(e.target.value.toUpperCase())}
-                    className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2 text-xs font-mono uppercase focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-gray-400 font-bold uppercase block">Recipient Bank</label>
-                  <input
-                    type="text"
-                    id="generator-recipient-bank-input"
-                    value={simReceiverBank}
-                    onChange={(e) => setSimReceiverBank(e.target.value)}
-                    className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2 text-xs focus:outline-none"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-gray-400 font-bold uppercase block">Amount Transferred (₦)</label>
-                  <input
-                    type="number"
-                    id="generator-amount-input"
-                    value={simAmount}
-                    onChange={(e) => setSimAmount(e.target.value)}
-                    className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2 text-xs font-mono text-cyan-400 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] text-gray-400 font-bold uppercase block">Reference Transaction Description</label>
-                <input
-                  type="text"
-                  id="generator-reference-input"
-                  value={simReference}
-                  onChange={(e) => setSimReference(e.target.value)}
-                  className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] text-gray-400 font-bold uppercase block">Custom Booster Badge (e.g. interest / PalmPoints)</label>
-                <input
-                  type="text"
-                  id="generator-custom-booster-input"
-                  value={simCustomField}
-                  onChange={(e) => setSimCustomField(e.target.value)}
-                  className="w-full bg-[#05070A] border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-rose-400 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2 pt-2">
+            <div className="space-y-6 w-full animate-fadeIn">
+              {/* Outer mode controllers - selector buttons */}
+              <div className="flex bg-[#121620] border border-zinc-800 p-1.5 rounded-2xl max-w-md">
                 <button
-                  type="submit"
-                  id="generator-render-btn"
-                  className="w-full py-2.5 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-850 text-gray-350 hover:text-white font-bold text-xs uppercase transition-all cursor-pointer text-center"
+                  type="button"
+                  onClick={() => setGeneratorMode("standard")}
+                  className={`flex-1 py-2.5 px-4 font-black rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer ${
+                    generatorMode === "standard"
+                      ? "bg-emerald-500 text-zinc-950 shadow-md"
+                      : "text-zinc-400 hover:text-zinc-200"
+                  }`}
                 >
-                  {isGeneratingReceipt ? "Syncing Mock Data..." : "Render Raw Preview Mockup"}
+                  📱 Mobile Simulators
                 </button>
                 <button
                   type="button"
-                  id="generator-simulate-btn"
-                  onClick={() => {
-                    setUnlockedReceipt(null);
-                    setSimulationActive(true);
-                  }}
-                  className="w-full py-2.5 bg-gradient-to-r from-cyan-400 to-blue-500 hover:brightness-110 text-gray-950 font-black rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  onClick={() => setGeneratorMode("signia")}
+                  className={`flex-1 py-2.5 px-4 font-black rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer ${
+                    generatorMode === "signia"
+                      ? "bg-emerald-500 text-zinc-950 shadow-md"
+                      : "text-zinc-400 hover:text-zinc-200"
+                  }`}
                 >
-                  ▶ Run Interactive Flow Sim
+                  👑 Sovereign Signia
                 </button>
               </div>
-            </form>
 
-            {/* Simulated Live Canvas view */}
-            <div className="md:col-span-7 flex flex-col items-center justify-center">
-              {simulationActive ? (
-                <div className="animate-fadeIn w-full flex flex-col items-center">
-                  <div className="flex justify-between items-center w-full max-w-[360px] pb-3 text-[10px]">
-                    <span className="text-cyan-400 font-bold uppercase tracking-widest font-mono">Simulating brand: {simBank.toUpperCase()}</span>
-                    <button
-                      id="close-simulation-btn"
-                      onClick={() => setSimulationActive(false)}
-                      className="text-gray-400 hover:text-white px-2 py-0.5 rounded border border-slate-800 bg-slate-950 font-mono scale-90 cursor-pointer"
-                    >
-                      Exit Sim
-                    </button>
+              {generatorMode === "standard" ? (
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start animate-fadeIn">
+                  {/* Variables Customizer form */}
+                  <form onSubmit={handleCreateMockTransactionReceipt} className="md:col-span-12 lg:col-span-5 bg-[#121620] p-6 border border-zinc-800 rounded-3xl space-y-4">
+                    <div className="flex justify-between items-center pb-2 border-b border-zinc-800">
+                      <h3 className="text-xs font-black uppercase text-emerald-400 tracking-widest">Receipt custom variables</h3>
+                      <span className="text-[9px] text-zinc-500 font-mono">Sim Price: 150 PLS</span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10.5px] text-zinc-300 font-bold uppercase tracking-wider block">Fintech Brand</label>
+                      <select
+                        id="generator-bank-select"
+                        value={simBank}
+                        onChange={(e) => setSimBank(e.target.value)}
+                        className="w-full bg-[#0d0e12] border border-zinc-805 rounded-xl px-4 py-2.5 text-xs text-white uppercase font-mono tracking-wider focus:outline-none focus:border-emerald-500"
+                      >
+                        <option value="opay">OPay Wallet</option>
+                        <option value="kuda">Kuda Microfinance</option>
+                        <option value="moniepoint">Moniepoint Bank</option>
+                        <option value="palmpay">PalmPay Wallet</option>
+                        <option value="gtbank">GTBank PLC</option>
+                        <option value="accessbank">Access Bank</option>
+                        <option value="firstbank">FirstBank Nigeria</option>
+                        <option value="zenith">Zenith Bank Plc</option>
+                        <option value="uba">United Bank For Africa (UBA)</option>
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 font-bold uppercase block">Sender Name</label>
+                        <input
+                          type="text"
+                          id="generator-sender-input"
+                          value={simSender}
+                          onChange={(e) => setSimSender(e.target.value.toUpperCase())}
+                          className="w-full bg-[#0d0e12] border border-zinc-805 rounded-xl px-4 py-2 text-xs font-mono uppercase focus:outline-none focus:border-emerald-500 text-white"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 font-bold uppercase block">Recipient Name</label>
+                        <input
+                          type="text"
+                          id="generator-recipient-input"
+                          value={simReceiver}
+                          onChange={(e) => setSimReceiver(e.target.value.toUpperCase())}
+                          className="w-full bg-[#0d0e12] border border-zinc-805 rounded-xl px-4 py-2 text-xs font-mono uppercase focus:outline-none focus:border-emerald-500 text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 font-bold uppercase block">Recipient Bank</label>
+                        <input
+                          type="text"
+                          id="generator-recipient-bank-input"
+                          value={simReceiverBank}
+                          onChange={(e) => setSimReceiverBank(e.target.value)}
+                          className="w-full bg-[#0d0e12] border border-zinc-805 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-emerald-500 text-white"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 font-bold uppercase block">Amount Transferred (₦)</label>
+                        <input
+                          type="number"
+                          id="generator-amount-input"
+                          value={simAmount}
+                          onChange={(e) => setSimAmount(e.target.value)}
+                          className="w-full bg-[#0d0e12] border border-zinc-805 rounded-xl px-4 py-2 text-xs font-mono text-emerald-400 focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-zinc-400 font-bold uppercase block">Reference Transaction Description</label>
+                      <input
+                        type="text"
+                        id="generator-reference-input"
+                        value={simReference}
+                        onChange={(e) => setSimReference(e.target.value)}
+                        className="w-full bg-[#0d0e12] border border-zinc-805 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-emerald-500 text-white"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-zinc-400 font-bold uppercase block">Custom Booster Badge (e.g. interest / PalmPoints)</label>
+                      <input
+                        type="text"
+                        id="generator-custom-booster-input"
+                        value={simCustomField}
+                        onChange={(e) => setSimCustomField(e.target.value)}
+                        className="w-full bg-[#0d0e12] border border-zinc-805 rounded-xl px-4 py-2.5 text-xs text-rose-400 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2 pt-2">
+                      <button
+                        type="submit"
+                        id="generator-render-btn"
+                        className="w-full py-2.5 bg-zinc-805 hover:bg-zinc-800 border border-zinc-700 text-zinc-350 hover:text-white font-bold text-xs uppercase rounded-xl transition-all cursor-pointer text-center"
+                      >
+                        {isGeneratingReceipt ? "Syncing Mock Data..." : "Render Raw Preview Mockup"}
+                      </button>
+                      <button
+                        type="button"
+                        id="generator-simulate-btn"
+                        onClick={() => {
+                          setUnlockedReceipt(null);
+                          setSimulationActive(true);
+                        }}
+                        className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        ▶ Run Interactive Flow Sim
+                      </button>
+                    </div>
+                  </form>
+
+                  {/* Simulated Live Canvas view */}
+                  <div className="md:col-span-12 lg:col-span-7 flex flex-col items-center justify-center">
+                    {simulationActive ? (
+                      <AppSimulator
+                        bank={simBank}
+                        senderName={simSender}
+                        receiverName={simReceiver}
+                        receiverBank={simReceiverBank}
+                        amount={parseFloat(simAmount) || 15500}
+                        dateTime={new Date().toLocaleString()}
+                        transactionId={"TXN" + Math.random().toString(36).substr(2, 9).toUpperCase()}
+                        reference={simReference}
+                        balance={425000}
+                        customField={simCustomField}
+                        onClose={() => setSimulationActive(false)}
+                        onFinishSimulation={(simData) => {
+                          setUnlockedReceipt({
+                            bank: simData.bank,
+                            sender_name: simData.senderName,
+                            receiver_name: simData.receiverName,
+                            receiver_bank: simData.receiverBank,
+                            amount: simData.amount,
+                            date_time: simData.dateTime,
+                            transaction_id: simData.transactionId,
+                            reference: simData.reference,
+                            balance: simData.balance,
+                            custom_field: simData.customField,
+                            unlocked: false,
+                          });
+                          setSimulationActive(false);
+                        }}
+                      />
+                    ) : unlockedReceipt ? (
+                      <ReceiptPreview
+                        bank={unlockedReceipt.bank}
+                        senderName={unlockedReceipt.sender_name}
+                        receiverName={unlockedReceipt.receiver_name}
+                        receiverBank={unlockedReceipt.receiver_bank}
+                        amount={unlockedReceipt.amount}
+                        dateTime={unlockedReceipt.date_time}
+                        transactionId={unlockedReceipt.transaction_id}
+                        reference={unlockedReceipt.reference}
+                        balance={unlockedReceipt.balance}
+                        customField={unlockedReceipt.custom_field}
+                        unlocked={unlockedReceipt.unlocked}
+                        onUnlock={handleUnlockSelectedReceipt}
+                      />
+                    ) : (
+                      <div className="p-16 border-2 border-dashed border-zinc-800 rounded-3xl text-center text-zinc-500 max-w-[400px] mx-auto flex flex-col items-center gap-3">
+                        <Sparkles className="w-8 h-8 opacity-30 animate-pulse text-emerald-400" />
+                        <p className="text-xs font-mono uppercase tracking-wide">
+                          Enter custom values on the left, then click "Render Raw Preview Mockup" or run "Interactive Flow Sim".
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <AppSimulator
-                    bank={simBank}
-                    senderName={simSender}
-                    receiverName={simReceiver}
-                    receiverBank={simReceiverBank}
-                    amount={parseFloat(simAmount) || 15500}
-                    dateTime={new Date().toLocaleString()}
-                    transactionId={"TXN" + Math.random().toString(36).substr(2, 9).toUpperCase()}
-                    reference={simReference}
-                    balance={425000}
-                    customField={simCustomField}
-                    onFinishSimulation={(simData) => {
-                      setUnlockedReceipt({
-                        bank: simData.bank,
-                        sender_name: simData.senderName,
-                        receiver_name: simData.receiverName,
-                        receiver_bank: simData.receiverBank,
-                        amount: simData.amount,
-                        date_time: simData.dateTime,
-                        transaction_id: simData.transactionId,
-                        reference: simData.reference,
-                        balance: simData.balance,
-                        custom_field: simData.customField,
-                        unlocked: false,
-                      });
-                      setSimulationActive(false);
-                    }}
-                  />
                 </div>
-              ) : unlockedReceipt ? (
-                <ReceiptPreview
-                  bank={unlockedReceipt.bank}
-                  senderName={unlockedReceipt.sender_name}
-                  receiverName={unlockedReceipt.receiver_name}
-                  receiverBank={unlockedReceipt.receiver_bank}
-                  amount={unlockedReceipt.amount}
-                  dateTime={unlockedReceipt.date_time}
-                  transactionId={unlockedReceipt.transaction_id}
-                  reference={unlockedReceipt.reference}
-                  balance={unlockedReceipt.balance}
-                  customField={unlockedReceipt.custom_field}
-                  unlocked={unlockedReceipt.unlocked}
-                  onUnlock={handleUnlockSelectedReceipt}
-                />
               ) : (
-                <div className="p-16 border-2 border-dashed border-slate-800 rounded-3xl text-center text-slate-500 max-w-[400px] mx-auto flex flex-col items-center gap-3">
-                  <Eye className="w-8 h-8 opacity-30 animate-pulse text-cyan-400" />
-                  <p className="text-xs font-mono uppercase tracking-wide">
-                    Enter custom values on the left, then click "Render Raw Preview Mockup" or run "Interactive Flow Sim".
-                  </p>
+                /* Sovereign Signia Custom Upload Template Manager */
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start animate-fadeIn">
+                  <div className="md:col-span-12 lg:col-span-5 bg-[#121620] p-6 border border-zinc-805 rounded-3xl space-y-4">
+                    <div className="flex justify-between items-center pb-2 border-b border-zinc-850">
+                      <h3 className="text-xs font-black uppercase text-emerald-400 tracking-widest">Signia custom templates</h3>
+                      <span className="text-[9px] text-[#10B981] font-mono font-bold bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/10">150 points / lock</span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10.5px] text-zinc-300 font-bold uppercase tracking-wider block">Templates Array</label>
+                      <select
+                        id="generator-template-select"
+                        value={selectedTemplate?.id || ""}
+                        onChange={(e) => {
+                          const found = templates.find((t) => t.id === e.target.value);
+                          if (found) setSelectedTemplate(found);
+                        }}
+                        className="w-full bg-[#0d0e12] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500 animate-fadeIn"
+                      >
+                        {templates.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name} ({t.uploaded_by === "system" ? "Official" : "My Custom"})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 animate-fadeIn">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 font-bold uppercase block">Sender Name Tag</label>
+                        <input
+                          type="text"
+                          value={simSender}
+                          onChange={(e) => setSimSender(e.target.value.toUpperCase())}
+                          className="w-full bg-[#0d0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs font-mono uppercase focus:outline-none focus:border-emerald-500 text-white"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 font-bold uppercase block">Recipient Name Tag</label>
+                        <input
+                          type="text"
+                          value={simReceiver}
+                          onChange={(e) => setSimReceiver(e.target.value.toUpperCase())}
+                          className="w-full bg-[#0d0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs font-mono uppercase focus:outline-none focus:border-emerald-500 text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 animate-fadeIn">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 font-bold uppercase block">Recipient Bank Tag</label>
+                        <input
+                          type="text"
+                          value={simReceiverBank}
+                          onChange={(e) => setSimReceiverBank(e.target.value)}
+                          className="w-full bg-[#0d0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 text-white"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 font-bold uppercase block">Simulation Amount (₦)</label>
+                        <input
+                          type="number"
+                          value={simAmount}
+                          onChange={(e) => setSimAmount(e.target.value)}
+                          className="w-full bg-[#0d0e12] border border-zinc-800 rounded-xl px-3 py-2 text-xs font-mono text-emerald-400 focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 animate-fadeIn">
+                      <label className="text-[10px] text-zinc-400 font-bold uppercase block">Statement Memo / Reference Reference</label>
+                      <input
+                        type="text"
+                        value={simReference}
+                        onChange={(e) => setSimReference(e.target.value)}
+                        className="w-full bg-[#0d0e12] border border-zinc-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-emerald-500 text-white"
+                      />
+                    </div>
+
+                    {/* Executive & Elite File Upload Zone */}
+                    <div className="p-4 bg-zinc-900/60 border border-dashed border-zinc-800 rounded-2xl relative space-y-2 animate-fadeIn">
+                      <div className="flex justify-between items-center text-[10px]">
+                        <span className="font-bold text-zinc-300 uppercase tracking-wider">Upload Custom HTML Receipt</span>
+                        <span className="font-mono text-[9px] text-[#10B981] font-black bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/20 shadow">SOVEREIGN EXCLUSIVE</span>
+                      </div>
+                      <p className="text-[10px] text-zinc-400 leading-normal">
+                        Drap/Drop or select raw HTML receipt layouts containing replacements placeholders (e.g. <code className="text-emerald-400 text-[9.5px]">{"{{SENDER_NAME}}"}</code>) to preview.
+                      </p>
+                      
+                      <label className="w-full text-center py-2.5 bg-zinc-850 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 text-[10.5px] font-bold rounded-lg cursor-pointer transition-all block max-w-full truncate px-3">
+                        {uploadingTemplate ? "Processing file ledger..." : "📂 Click to Choose HTML Template File"}
+                        <input
+                          type="file"
+                          accept=".html,.txt"
+                          onChange={async (e) => {
+                            if (!currentUser) return;
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+
+                            if (currentUser.subscription_tier !== "executive" && currentUser.subscription_tier !== "elite") {
+                              alert("❌ Subscription Gated: Standard HTML receipt uploads ('Signia files') require Executive Sovereign ($20) or Elite Custom Ledger ($30) active subscriptions. Please buy/update packages on homepage to upgrade!");
+                              return;
+                            }
+
+                            setUploadingTemplate(true);
+                            const reader = new FileReader();
+                            reader.onload = async (evt) => {
+                              const content = evt.target?.result as string;
+                              try {
+                                const res = await fetch("/api/templates/upload", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    userId: currentUser.id,
+                                    name: file.name.replace(".html", "").replace(".txt", ""),
+                                    htmlContent: content
+                                  })
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  alert(`🎉 Template "${data.template.name}" successfully integrated!`);
+                                  // Reload template collections
+                                  const tRes = await fetch("/api/templates/list");
+                                  const tData = await tRes.json();
+                                  setTemplates(tData);
+                                  const matched = tData.find((tm: any) => tm.name === file.name.replace(".html", "").replace(".txt", ""));
+                                  if (matched) setSelectedTemplate(matched);
+                                } else {
+                                  alert(data.error || "Failed to compile custom signia.");
+                                }
+                              } catch (err) {
+                                console.error(err);
+                                alert("Transmission ledger error.");
+                              } finally {
+                                setUploadingTemplate(false);
+                              }
+                            };
+                            reader.readAsText(file);
+                          }}
+                          className="hidden"
+                          disabled={uploadingTemplate}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Sandboxed Live Render Frame output panel on the right */}
+                  <div className="md:col-span-12 lg:col-span-7 flex flex-col items-center animate-fadeIn">
+                    {selectedTemplate ? (
+                      <div className="w-full space-y-4">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-zinc-900 border border-zinc-800 rounded-2xl text-xs gap-3">
+                          <div className="space-y-0.5">
+                            <span className="text-[10px] text-zinc-400 block font-bold uppercase">Dynamic Sandboxed Frame</span>
+                            <span className="text-[10px] text-emerald-450 font-bold block">Template ID: {selectedTemplate.id}</span>
+                          </div>
+                          
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const selectPrice = settings?.receipt_price_points || 150;
+                              if (currentUser.points < selectPrice) {
+                                alert(`❌ Insufficient balance: Full high-resolution clean extraction requires ${selectPrice} PLS points.`);
+                                return;
+                              }
+
+                              const confirmation = window.confirm(`Spend ${selectPrice} points to generate, certify and download high-resolution transaction PDF document for "${selectedTemplate.name}"?`);
+                              if (!confirmation) return;
+
+                              try {
+                                const res = await fetch("/api/receipts/buy", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    userId: currentUser.id,
+                                    bank: selectedTemplate.name,
+                                    senderName: simSender,
+                                    receiverName: simReceiver,
+                                    receiverBank: simReceiverBank,
+                                    amount: simAmount,
+                                    customField: "Signia Template Lock Code",
+                                    reference: simReference,
+                                  })
+                                });
+
+                                const data = await res.json();
+                                if (data.success) {
+                                  alert(`🎉 Signia certified! Points subtracted successfully.`);
+                                  handleRefreshUserPoints();
+
+                                  // Extract compiled string doc
+                                  let docContent = selectedTemplate.html_content || "No template content.";
+                                  docContent = docContent.replace(/\{\{SENDER_NAME\}\}/g, simSender);
+                                  docContent = docContent.replace(/\{\{RECEIVER_NAME\}\}/g, simReceiver);
+                                  docContent = docContent.replace(/\{\{RECEIVER_BANK\}\}/g, simReceiverBank);
+                                  docContent = docContent.replace(/\{\{AMOUNT\}\}/g, parseFloat(simAmount || "0").toLocaleString());
+                                  docContent = docContent.replace(/\{\{REFERENCE\}\}/g, simReference);
+                                  docContent = docContent.replace(/\{\{TRANSACTION_ID\}\}/g, "TXN" + Math.random().toString(36).substr(2, 9).toUpperCase());
+                                  docContent = docContent.replace(/\{\{DATE_TIME\}\}/g, new Date().toLocaleString());
+
+                                  // Save content file download physically
+                                  const blob = new Blob([docContent], { type: "text/html" });
+                                  const url = URL.createObjectURL(blob);
+                                  const link = document.createElement("a");
+                                  link.href = url;
+                                  link.download = `StyleHub_Signia_${selectedTemplate.name.replace(/\s+/g, "_")}.html`;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                  URL.revokeObjectURL(url);
+                                } else {
+                                  alert(data.error || "Gated verification block.");
+                                }
+                              } catch (err) {
+                                console.error(err);
+                                alert("Could not complete points debit handshake.");
+                              }
+                            }}
+                            className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black rounded-xl transition-all text-[11px] uppercase tracking-wider cursor-pointer font-sans"
+                          >
+                            🔒 Deduct 150 PTS & Download Signed Document
+                          </button>
+                        </div>
+
+                        {/* Interactive dynamic iframe sandbox */}
+                        <div className="w-full bg-[#171a24] p-5 rounded-3xl border border-zinc-800 shadow-xl max-w-lg mx-auto relative overflow-hidden flex flex-col justify-center items-center">
+                          {/* Diagonal watermark overlaid on raw preview mode strictly */}
+                          <div className="absolute inset-0 pointer-events-none flex items-center justify-center select-none rotate-12 z-40 opacity-[0.06] whitespace-nowrap">
+                            <span className="text-red-500 font-sans font-black uppercase text-2xl border-4 border-red-500 p-3 rounded-xl tracking-widest leading-none block">
+                              RAW PREVIEW WATERMARK • READ-ONLY PREVIEW
+                            </span>
+                          </div>
+
+                          <iframe
+                            id="signia-sandboxed-preview-frame"
+                            title="Signia Sovereign Sandbox"
+                            srcDoc={`
+                              <!DOCTYPE html>
+                              <html>
+                                <head>
+                                  <meta charset="utf-8">
+                                  <style>
+                                    body {
+                                      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                                      color: #1a1a24;
+                                      background: #fafafa;
+                                      padding: 24px;
+                                      margin: 0;
+                                      font-size: 14px;
+                                      line-height: 1.5;
+                                    }
+                                    .certified-badge {
+                                      display: inline-block;
+                                      margin-bottom: 20px;
+                                      font-size: 11px;
+                                      font-weight: bold;
+                                      color: #D4AF37;
+                                      border: 1px solid #D4AF37;
+                                      padding: 4px 8px;
+                                      border-radius: 4px;
+                                      text-transform: uppercase;
+                                    }
+                                  </style>
+                                </head>
+                                <body>
+                                  \${(() => {
+                                    let content = selectedTemplate.html_content || "<p>Blank Template</p>";
+                                    content = content.replace(/\\{\\{SENDER_NAME\\}\\}/g, simSender);
+                                    content = content.replace(/\\{\\{RECEIVER_NAME\\}\\}/g, simReceiver);
+                                    content = content.replace(/\\{\\{RECEIVER_BANK\\}\\}/g, simReceiverBank);
+                                    content = content.replace(/\\{\\{AMOUNT\\}\\}/g, parseFloat(simAmount || "0").toLocaleString());
+                                    content = content.replace(/\\{\\{REFERENCE\\}\\}/g, simReference);
+                                    content = content.replace(/\\{\\{TRANSACTION_ID\\}\\}/g, "TXN_WATERMARKED_DRAFT");
+                                    content = content.replace(/\\{\\{DATE_TIME\\}\\}/g, new Date().toLocaleString());
+                                    return content;
+                                  })()}
+                                </body>
+                              </html>
+                            `}
+                            className="w-full min-h-[460px] bg-white rounded-2xl border border-zinc-200 z-10"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="py-24 text-center text-zinc-500 font-mono text-xs max-w-md mx-auto">
+                        <Sparkles className="w-8 h-8 opacity-30 animate-pulse text-emerald-400 mx-auto mb-3" />
+                        No template selected yet. Upload or select official systems layouts.
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
-          </div>
-        )
+          )
       )}
 
         {/* Tab Content: MARKETPLACE & ESCROW */}
@@ -1528,13 +1856,38 @@ export default function App() {
               {/* Cashout withdraw to USDT */}
               <div className="bg-slate-900/60 p-6 border border-slate-800 rounded-3xl space-y-4">
                 <h3 className="text-xs font-black uppercase text-gray-400 tracking-widest pb-3 border-b border-slate-850">Withdraw points to USDT</h3>
-                <p className="text-[10px] text-gray-500 font-mono leading-relaxed pb-1">
-                  Rate is 100 PTS = 1 USDT. Minimun is 1,000 points. Approvals are manually processed by administrator.
-                </p>
+                
+                {/* Points ledger composition split */}
+                <div className="grid grid-cols-2 gap-2 text-[10px] font-mono bg-slate-950/60 p-3.5 border border-slate-850 rounded-xl space-y-0.5">
+                  <div className="col-span-2 border-b border-slate-850/60 pb-1.5 flex justify-between items-center">
+                    <span className="text-slate-500">TOTAL ACCOUNT BALANCE</span>
+                    <span className="font-extrabold text-white text-xs">{currentUser?.points || 0} PLS</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="text-green-500">Withdrawable (Purchased):</span>
+                    <span className="font-semibold text-green-400">{currentUser?.purchased_points || 0} PLS</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-amber-500">Promotional (Bonus):</span>
+                    <span className="font-semibold text-amber-500">
+                      {Math.max(0, (currentUser?.points || 0) - (currentUser?.purchased_points || 0))} PLS
+                    </span>
+                  </div>
+                  <span className="col-span-2 text-[8px] text-gray-500 italic block pt-1.5 leading-normal">
+                    * Promotional balances (from signup, referrers, and system commissions) are locked to in-app services and cannot be cashed out.
+                  </span>
+                </div>
+
+                <div className="p-3 bg-red-950/20 border border-red-500/10 rounded-xl space-y-1">
+                  <h4 className="text-[10px] font-black uppercase text-amber-400 font-mono">⚠️ Exchange Penalty Loss warning</h4>
+                  <p className="text-[9px] text-gray-400 leading-normal font-sans">
+                    <strong>Value Reduction Clause:</strong> While points are purchased at 100 PTS = $1.00 USD, converting points back to USDT cashout is penalized at a high conversion rate of <strong>250 PTS = 1.00 USDT</strong> (a high-loss 60% fee penalty). To maximize value, we strongly advise spending your points inside the platform.
+                  </p>
+                </div>
 
                 <form onSubmit={handlePointsUSDTWithdrawal} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-[9.5px] text-gray-500 font-bold uppercase">Points quantity</label>
+                    <label className="text-[9.5px] text-gray-500 font-bold uppercase block">Points quantity to cash out</label>
                     <input
                       type="number"
                       id="withdraw-points-input"
@@ -1544,9 +1897,14 @@ export default function App() {
                       onChange={(e) => setWithdrawPointsAmt(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-cyan-400 font-mono focus:outline-none"
                     />
+                    {withdrawPointsAmt && !isNaN(parseInt(withdrawPointsAmt)) && (
+                      <span className="text-[9px] font-mono text-cyan-500 block">
+                        Estimated Yield (under premium loss penalty): ${ (parseInt(withdrawPointsAmt) / 250).toFixed(2) } USDT
+                      </span>
+                    )}
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[9.5px] text-gray-500 font-bold uppercase">USDT Wallet network (TRC-20)</label>
+                    <label className="text-[9.5px] text-gray-500 font-bold uppercase block">USDT Wallet network (TRC-20)</label>
                     <input
                       type="text"
                       id="withdraw-wallet-input"
@@ -1557,6 +1915,20 @@ export default function App() {
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white font-mono focus:outline-none"
                     />
                   </div>
+
+                  <div className="text-[9.5px] text-gray-400 font-mono leading-normal space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className={currentUser?.kyc_status === "verified" ? "text-green-500 font-bold" : "text-gray-600"}>
+                        {currentUser?.kyc_status === "verified" ? "[✓] KYC Verified" : "[ ] KYC Verification Required"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={currentUser?.subscription_tier ? "text-green-500 font-bold" : "text-gray-600"}>
+                        {currentUser?.subscription_tier ? "[✓] Depositor Subscription License Unlocked" : "[ ] Depositor Subscription License Required"}
+                      </span>
+                    </div>
+                  </div>
+
                   <button
                     type="submit"
                     id="withdraw-submit-btn"
@@ -1566,6 +1938,33 @@ export default function App() {
                     {isSubmitWithdrawal ? "Syncing coordinates..." : "Request points cashout"}
                   </button>
                 </form>
+              </div>
+            </div>
+
+            {/* APP LICENSE & REGISTER PROTOCOL SECTION */}
+            <div className="bg-[#121620] border border-zinc-800 rounded-3xl p-6 mt-6 space-y-4">
+              <div className="flex items-center gap-2 border-b border-zinc-800 pb-3">
+                <span className="text-[#10B981] text-xs font-black uppercase tracking-widest font-mono">
+                  📜 StyleHub End-User App License Agreement
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-[11px] text-zinc-400 font-sans leading-relaxed">
+                <div className="space-y-3">
+                  <p>
+                    <strong>1. Scope of Grant:</strong> Under the StyleHub Sovereign Ledger terms, you are granted a non-exclusive, personal, non-transferable, revocable license to operate transaction simulators, trade signals telemetry, and custom Signia mockup engines strictly for private diagnostic, educational, or ledger modeling scenarios. Under no conditions may printed receipts be represented as live active monetary instruments.
+                  </p>
+                  <p>
+                    <strong>2. System Currency (PLS Points):</strong> PLS points are virtual simulation tokens representing computation priorities on StyleHub nodes. They are consumed on-the-fly for real-time document signatures, sandboxed rendering, and live signal polling. PLS holds zero direct liability outside registered user cashouts verified under the AML/KYC identity registration dossier.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  <p>
+                    <strong>3. User Integrity & Compliance:</strong> By uploading bespoke HTML "Signia Files" or accessing broker indices, you swear and represent that all user content conforms to national cyber-safety mandates and complies fully with standard financial simulator norms. StyleHub reserves the right to terminate accounts, void balances, or revoke administrative access upon detection of abnormal system telemetry.
+                  </p>
+                  <p>
+                    <strong>4. Google Service Association:</strong> Sign-ins and platform credentials utilize secure federated single sign-on technology. All associated logos, branding emblems, and metadata remain the exclusive intellectual properties of Google Inc. and are represented solely to reinforce third-party federation trust vectors.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -1580,6 +1979,24 @@ export default function App() {
               </div>
             )}
           </div>
+        )
+      )}
+
+      {activeTab === "brokers" && (
+        !currentUser ? (
+          <div className="flex flex-col items-center justify-center py-10 w-full animate-fadeIn">
+            <AuthCard
+              onAuthSuccess={(u) => {
+                setCurrentUser(u);
+                localStorage.setItem("sh_user", JSON.stringify(u));
+              }}
+            />
+          </div>
+        ) : (
+          <CryptoBrokersPortal
+            currentUser={currentUser}
+            onRefreshUser={handleRefreshUserPoints}
+          />
         )
       )}
       </div>
@@ -1688,6 +2105,16 @@ export default function App() {
         >
           <Radio className="w-5 h-5" />
           <span className="text-[10px] font-semibold tracking-wider uppercase">BLACK ROOM</span>
+        </button>
+        <button
+          id="nav-tab-brokers"
+          onClick={() => setActiveTab("brokers")}
+          className={`flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
+            activeTab === "brokers" ? "text-[#00E5FF] font-black" : "text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          <TrendingUp className="w-5 h-5" />
+          <span className="text-[10px] font-semibold tracking-wider uppercase">BROKERS</span>
         </button>
         <button
           id="nav-tab-profile"
