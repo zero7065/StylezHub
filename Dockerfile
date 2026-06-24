@@ -1,10 +1,10 @@
-FROM node:18-slim
+FROM node:20-slim
 
 WORKDIR /app
 
 # Install dependencies first (better layer caching)
 COPY package*.json ./
-RUN npm install
+RUN rm -f package-lock.json && npm install
 
 # Copy all source files
 COPY . .
